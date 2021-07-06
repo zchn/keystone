@@ -255,7 +255,6 @@ set_target_properties(examples PROPERTIES EXCLUDE_FROM_ALL YES)
 
 add_custom_target("tests" DEPENDS examples "sm")
 
-
 ###############################################################################
 ## COMPONENT: image
 ###############################################################################
