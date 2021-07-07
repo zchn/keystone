@@ -3,7 +3,7 @@
 	url = https://github.com/riscv/riscv-gnu-toolchain
 [submodule "sdk"]
 	path = sdk
-	url = https://github.com/keystone-enclave/keystone-sdk
+	url = https://github.com/zchn/keystone-sdk
 [submodule "linux-keystone-driver"]
 	path = linux-keystone-driver
 	url = https://github.com/keystone-enclave/linux-keystone-driver
