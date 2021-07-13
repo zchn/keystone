@@ -1,10 +1,10 @@
 Tutorial 5: Remote Attestation (Incomplete)
 ==============================================
 
-This tutorial explains how to build and run a simple "hello world" enclave.
-An enclave consists of an eapp and a runtime, but also needs the host that initializes and launches
-the enclave.
-Thus, each enclave source tree contains at least the host and eapp.
+This tutorial explains how to build and run a simple proof of work application leveraging attestation instead of one way functions.
+
+This application consists of three parts: an eapp running in the keystone enclave, a host program that initializes and launches
+the eapp, and a remote verifier verifying that the client did run the eapp (i.e. the proof of work).
 
 Before jumping into the tutorial, please complete :doc:`Quick Start
 <../Running-Keystone-with-QEMU>`.
