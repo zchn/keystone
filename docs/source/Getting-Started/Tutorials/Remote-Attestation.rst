@@ -12,11 +12,6 @@ Before jumping into the tutorial, please complete :doc:`Quick Start
 Prerequisite
 ------------------------------
 
-The Eyrie runtime allows the enclave to be statically linked with
-libc, and will then support a few standard functions such as
-``printf``. This is not a secure I/O interface, but is useful for
-demos and benchmarking.
-
 Set ``PATH`` to include RISC-V tools and ``KEYSTONE_SDK_DIR`` to point the
 absolute path of the installed SDK.
 
@@ -25,14 +20,14 @@ Let's take a look at the example provided in `Keystone SDK
 
 ::
 
-	ls sdk/examples/hello
+	ls sdk/examples/attestation
 
 You can find two directories and ``CMakeLists.txt``.
 
-Enclave Application: hello.c
-------------------------------
+Enclave Application: processor.c
+--------------------------------
 
-Open ``hello.c`` file in ``sdk/exmamples/hello/eapp/``. This is the source code of the enclave
+Open ``processor.c`` file in ``sdk/exmamples/attestation/eapp/``. This is the source code of the enclave
 application.
 
 .. code-block:: c
@@ -41,7 +36,9 @@ application.
 
 	int main()
 	{
-	  printf("hello, world!\n");
+	  // todo(zchn): get nonce from host app.
+          for(i=0;i<1000000;i++);
+          // todo(zchn): send nonce back to host as part of the attestation report.
 	  return 0;
 	}
 
