@@ -3,7 +3,7 @@ Tutorial 5: Remote Attestation (Incomplete)
 
 This tutorial explains how to build and run a simple proof of work application leveraging attestation instead of one way functions.
 
-This application consists of three parts: an eapp running in the keystone enclave, a host program that initializes and launches
+This application consists of three parts: an eapp running in the keystone enclave, a host application that initializes and launches
 the eapp, and a remote verifier verifying that the client did run the eapp (i.e. the proof of work).
 
 Before jumping into the tutorial, please complete :doc:`Quick Start
@@ -44,10 +44,10 @@ application.
 
 This is the standard C program that we will run isolated in an enclave.
 
-Host Application: host.cpp
+Host Application: untrusted-runner.cpp
 ------------------------------
 
-Open ``host.cpp`` in ``sdk/examples/hello/host/``. This is the source code of the host application.
+Open ``untrusted_runner.cpp`` in ``sdk/examples/attestation/host/``. This is the source code of the host application.
 
 .. code-block:: cpp
 
