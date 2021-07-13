@@ -22,7 +22,7 @@ Let's take a look at the example provided in `Keystone SDK
 
 	ls sdk/examples/attestation
 
-You can find two directories and ``CMakeLists.txt``.
+You can find three directories and ``CMakeLists.txt``.
 
 Enclave Application: processor.c
 --------------------------------
@@ -61,6 +61,7 @@ Open ``untrusted_runner.cpp`` in ``sdk/examples/attestation/host/``. This is the
 	  params.setFreeMemSize(1024*1024);
 	  params.setUntrustedMem(DEFAULT_UNTRUSTED_PTR, 1024*1024);
 
+          // todo(zchn): download the eapp from the verifier.
 	  enclave.init(argv[1], argv[2], params);
 
 	  enclave.registerOcallDispatch(incoming_call_dispatch);
