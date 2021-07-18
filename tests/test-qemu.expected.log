@@ -11,6 +11,7 @@ testing fibonacci
 testing fib-bench
 testing attestation
 Attestation report SIGNATURE is valid
+Enclave and SM hashes match with expected.
 testing untrusted
 Enclave said: hello world!
 Enclave said: 2nd hello world!
