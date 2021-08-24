@@ -1,10 +1,13 @@
-Tutorial 5: Remote Attestation (Incomplete)
-==============================================
+Tutorial 5: Remote Attestation
+==============================
 
-This tutorial explains how to build and run a simple proof of work application leveraging attestation instead of one way functions.
+This tutorial explains how to build and run a simple proof of work
+application leveraging attestation instead of one way functions.
 
-This application consists of three parts: an eapp running in the keystone enclave, a host application that initializes and launches
-the eapp, and a remote verifier verifying that the client did run the eapp (i.e. the proof of work).
+This application consists of three parts: an EApp running in the
+keystone enclave, a host application that initializes and launches the
+eapp, and a remote verifier verifying that the client did run the EApp
+(i.e. the proof of work).
 
 Before jumping into the tutorial, please complete :doc:`Quick Start
 <../Running-Keystone-with-QEMU>`.
@@ -22,91 +25,259 @@ Let's take a look at the example provided in `Keystone SDK
 
 	ls sdk/examples/attestation
 
-You can find three directories and ``CMakeLists.txt``.
+You can find two directories and ``CMakeLists.txt``.
 
-Enclave Application: processor.c
+Enclave Application: attestor.c
 --------------------------------
 
-Open ``processor.c`` file in ``sdk/exmamples/attestation/eapp/``. This is the source code of the enclave
-application.
+Open ``attestor.c`` file in ``sdk/exmamples/attestation/eapp/``. This
+is the source code of the enclave application.
 
 .. code-block:: c
 
-	#include <stdio.h>
+	#include "app/eapp_utils.h"
+	#include "app/syscall.h"
+	#include "edge/edge_common.h"
 
-	int main()
-	{
-	  // todo(zchn): get nonce from host app.
-          for(i=0;i<1000000;i++);
-          // todo(zchn): send nonce back to host as part of the attestation report.
-	  return 0;
+	#define OCALL_PRINT_BUFFER 1
+	#define OCALL_PRINT_VALUE 2
+	#define OCALL_COPY_REPORT 3
+	#define OCALL_GET_STRING 4
+
+	int
+	main() {
+	  struct edge_data retdata;
+	  ocall(OCALL_GET_STRING, NULL, 0, &retdata, sizeof(struct edge_data));
+
+	  for (unsigned long i = 1; i <= 10000; i++) {
+	    if (i % 5000 == 0) {
+	      ocall(OCALL_PRINT_VALUE, &i, sizeof(unsigned long), 0, 0);
+	    }
+	  }
+
+	  char nonce[2048];
+	  if (retdata.size > 2048) retdata.size = 2048;
+	  copy_from_shared(nonce, retdata.offset, retdata.size);
+
+	  char buffer[2048];
+	  attest_enclave((void*)buffer, nonce, retdata.size);
+
+	  ocall(OCALL_COPY_REPORT, buffer, 2048, 0, 0);
+
+	  EAPP_RETURN(0);
 	}
 
-This is the standard C program that we will run isolated in an enclave.
+This is the standard C program that we will run isolated in an
+enclave. This program gets a random nonce from the verifier via the
+host, iterate 100000 times, then send the nonce as part of the
+attestation report back
 
-Host Application: untrusted-runner.cpp
-------------------------------
+Host Application: host.cpp
+--------------------------
 
-Open ``untrusted_runner.cpp`` in ``sdk/examples/attestation/host/``. This is the source code of the host application.
+Open ``host.h`` in ``sdk/examples/attestation/host/``. This is the C++
+class definition of the host application. To simplify this example, we
+are implementing the remote verifier and the host in two different
+classes (the ``Verifier`` class and the ``Host`` class) but including
+them in the same binary (``attestor_runner.cpp`` in
+``sdk/examples/attestation/host/``). We use the ``host.cpp`` file to
+encapsulate all the code needed by the host, and the ``verifier.cpp``
+to encapsulate all the code needed by the verifier.
 
 .. code-block:: cpp
 
-	#include "keystone.h"
-	#include "edge_call.h"
-	int main(int argc, char** argv)
-	{
+	// The Host class mimicks a host interacting with the local enclave
+	// and the remote verifier.
+	class Host {
+	public:
+	Host(
+	    const Keystone::Params& params, const std::string& eapp_file,
+	    const std::string& rt_file)
+	    : params_(params), eapp_file_(eapp_file), rt_file_(rt_file) {}
+	    // Given a random nonce from the remote verifier, this method leaves
+	    // it for the enclave to fetch, and returns the attestation report
+	    // from the enclave to the verifier.
+	    Report run(const std::string& nonce);
+
+	private:
+	  // ... See host.h for the full source code.
+	};
+
+Let’s first take a look at how the ``Host::run`` method is
+implemented:
+
+.. code-block:: cpp
+
+	Report
+	Host::run(const std::string& nonce) {
 	  Keystone::Enclave enclave;
-	  Keystone::Params params;
+	  enclave.init(eapp_file_.c_str(), rt_file_.c_str(), params_);
 
-	  params.setFreeMemSize(1024*1024);
-	  params.setUntrustedMem(DEFAULT_UNTRUSTED_PTR, 1024*1024);
+	  RunData run_data{
+	      SharedBuffer{enclave.getSharedBuffer(), enclave.getSharedBufferSize()},
+	      nonce, nullptr};
 
-          // todo(zchn): download the eapp from the verifier.
-	  enclave.init(argv[1], argv[2], params);
+	  enclave.registerOcallDispatch([&run_data](void* buffer) {
+	    assert(buffer == (void*)run_data.shared_buffer.ptr());
+	    dispatch_ocall(run_data);
+	  });
 
-	  enclave.registerOcallDispatch(incoming_call_dispatch);
-	  edge_call_init_internals((uintptr_t) enclave.getSharedBuffer(),
-	      enclave.getSharedBufferSize());
+	  uintptr_t encl_ret;
+	  enclave.run(&encl_ret);
 
-	  enclave.run();
-
-	  return 0;
+	  return *run_data.report;
 	}
 
-``keystone.h`` contains ``Keystone::Enclave`` class which has several member functions to control the
-enclave.
+The main job of the host is to relay messages from the remote verifier
+to the EApp, and vice-versa.
 
-Following code initializes the enclave memory with the eapp/runtime.
+Remote Verifier: verifier.cpp
+=============================
+
+The remote verifier is the most interesting part of this tutorial. As
+mentioned above, although the remote verifier is actually implemented
+in the same binary file as the host, in reality the remote verifier
+usually runs on a different machine and communicates with the host
+remotely. The goal of the remote verifier is to ensure that the host
+runs the EApp til the end, and this is achieved by sending a random
+nonce to the EApp via the host, and verifying the attestation report
+sent from the EApp. The nonce is to prevent replay attacks.
+
+In order for the verification to be sound, the verifier needs to do
+the following things:
+
+1. Perform analysis on the security monitor to ensure the security
+monitor does the right thing with regards to security.
+2. Perform analysis on the EApp binary to ensure the EApp indeed
+iterates 10000 times and only sends the attestation report after the
+loop.
+3. Verify the security monitor used by the host machine is the one
+analyzed in 1.
+4. Verify the EApp ran by the host is the one analyzed in 2.
+5. Verify the nonce sent from the EApp is the one generated by the
+verifier.
+
+While 1 and 2 are typically done beforehand (or delegated to a trusted
+party), 3-5 are done at runtime by checking signature and payload of
+the attestation report.
+
+The ``Verifier::verify_report`` method accomplishes 3-5:
 
 .. code-block:: cpp
 
-	Keystone::Enclave enclave;
-	Keystone::Params params;
-	enclave.init(<eapp binary>, <runtime binary>, params);
+	void
+	Verifier::verify_report(Report& report, const std::string& nonce) {
+	  debug_verify(report, _sanctum_dev_public_key);
 
-``Keystone::Params`` class is defined in ``sdk/include/host/params.h``, and contains enclave parameters
-such as the size of free memory and the address/size of the untrusted shared buffer.
-These parameters can be configured by following lines:
+	  byte expected_enclave_hash[MDSIZE];
+	  compute_expected_enclave_hash(expected_enclave_hash);
+
+	  byte expected_sm_hash[MDSIZE];
+	  compute_expected_sm_hash(expected_sm_hash);
+
+	  verify_hashes(
+	      report, expected_enclave_hash, expected_sm_hash, _sanctum_dev_public_key);
+
+	  verify_data(report, nonce);
+	}
+
+ First, let's dive into how the Enclave hash is computed. It is done
+ by leveraging a simulation mode offered by the ``Keystone:Enclave``
+ class:
+
+ .. code-block:: cpp
+
+	void
+	Verifier::compute_expected_enclave_hash(byte* expected_enclave_hash) {
+	  Keystone::Enclave enclave;
+	  Keystone::Params simulated_params = params_;
+	  simulated_params.setSimulated(true);
+	  // This will cause validate_and_hash_enclave to be called when
+	  // isSimulated() == true.
+	  enclave.init(eapp_file_.c_str(), rt_file_.c_str(), simulated_params);
+	  memcpy(expected_enclave_hash, enclave.getHash(), MDSIZE);
+	}
+
+Secondly, the Security Monitor's hash is computed using
+``compute_expected_sm_hash``:
 
 .. code-block:: cpp
 
-	params.setFreeMemSize(1024*1024);
-	params.setUntrustedMem(DEFAULT_UNTRUSTED_PTR, 1024*1024);
+	void
+	Verifier::compute_expected_sm_hash(byte* expected_sm_hash) {
+	  // It is important to make sure the size of the SM buffer we are
+	  // measuring is the same as the size of the SM buffer allocated by
+	  // the bootloader. See keystone/bootrom/bootloader.c for how it is
+	  // computed in the bootloader.
+	  const size_t sanctum_sm_size = 0x1ff000;
+	  std::vector<byte> sm_content(sanctum_sm_size, 0);
 
-In order to handle the edge calls (including system calls), the enclave must register the edge call
-handler and initialize the buffer addresses. This is done as following:
+	  {
+	    // Reading SM content from file.
+	    FILE* sm_bin = fopen(sm_bin_file_.c_str(), "rb");
+	    if (!sm_bin)
+	      throw std::runtime_error(
+	          "Error opening sm_bin_file_: " + sm_bin_file_ + ", " +
+	          std::strerror(errno));
+	    if (fread(sm_content.data(), 1, sm_content.size(), sm_bin) <= 0)
+	      throw std::runtime_error(
+	          "Error reading sm_bin_file_: " + sm_bin_file_ + ", " +
+	          std::strerror(errno));
+	    fclose(sm_bin);
+	  }
+
+	  {
+	    // The actual SM hash computation.
+	    hash_ctx_t hash_ctx;
+	    hash_init(&hash_ctx);
+	    hash_extend(&hash_ctx, sm_content.data(), sm_content.size());
+	    hash_finalize(expected_sm_hash, &hash_ctx);
+	  }
+	}
+
+Then, the hashes are compared against the ones in the report:
 
 .. code-block:: cpp
 
-	enclave.registerOcallDispatch(incoming_call_dispatch);
-	edge_call_init_internals((uintptr_t) enclave.getSharedBuffer(),
-	  enclave.getSharedBufferSize());
+	void
+	Verifier::verify_hashes(
+	    Report& report, const byte* expected_enclave_hash,
+	    const byte* expected_sm_hash, const byte* dev_public_key) {
+	  if (report.verify(expected_enclave_hash, expected_sm_hash, dev_public_key)) {
+	    printf("Enclave and SM hashes match with expected.\n");
+	  } else {
+	    printf(
+	        "Either the enclave hash or the SM hash (or both) does not "
+	        "match with expeced.\n");
+	    report.printPretty();
+	  }
+	}
 
-Finally, the host launches the enclave by
+Finally, let’s do 5: Verify the nonce sent from the EApp is the one
+generated by the verifier:
 
 .. code-block:: cpp
 
-	enclave.run();
+	void
+	Verifier::verify_data(Report& report, const std::string& nonce) {
+	  if (report.getDataSize() != nonce.length() + 1) {
+	    const char error[] =
+	        "The size of the data in the report is not equal to the size of the "
+	        "nonce initially sent.";
+	    printf(error);
+	    report.printPretty();
+	    throw std::runtime_error(error);
+	  }
+
+	  if (0 == strcmp(nonce.c_str(), (char*)report.getDataSection())) {
+	    printf("Returned data in the report match with the nonce sent.\n");
+	  } else {
+	    printf("Returned data in the report do NOT match with the nonce sent.\n");
+	  }
+	}
+
+See ``verifier.h`` and ``verifier.cpp`` for the full implementation of
+the ``Verifier`` class.
 
 Enclave Package
 ------------------------------
@@ -118,17 +289,17 @@ In order to build the example, try the following in the build directory:
 
 ::
 
-  make hello-package
+  make attestor-package
 
-This will generate an enclave package named ``hello.ke`` under ``<build directory>/examples/hello``.
-``hello.ke`` is an self-extracting archive file for the enclave.
+This will generate an enclave package named ``attestor.ke`` under ``<build directory>/examples/attestation``.
+``attestor.ke`` is an self-extracting archive file for the enclave.
 
 Next, copy the package into the buildroot overlay directory.
 
 ::
 
   # in the build directory
-  cp examples/hello ./overlay/root
+  cp examples/attestation ./overlay/root
 
 Running ``make image`` in your build directory will generate the buildroot disk
 image containing the copied package.
@@ -159,7 +330,7 @@ Deploy the enclave
 ::
 
 	# [inside QEMU]
-	./hello/hello.ke
+	./attestation/attestor.ke
 
 You'll see the enclave running!
 
@@ -167,4 +338,8 @@ You'll see the enclave running!
 
 	Verifying archive integrity... All good.
 	Uncompressing Keystone Enclave Package
-	hello, world!
+	Enclave said value: 5000
+	Enclave said value: 10000
+	Attestation report SIGNATURE is valid
+	Enclave and SM hashes match with expected.
+	Returned data in the report match with the nonce sent.
