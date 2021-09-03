@@ -198,7 +198,8 @@ if(initramfs)
     COMMENT "Building linux (initramfs)"
   )
 else()
-  add_custom_command(OUTPUT ${linux_image} DEPENDS ${linux_srcdir} "linux-symvers"
+  # TODO(zchn): remove buildroot
+  add_custom_command(OUTPUT ${linux_image} DEPENDS ${linux_srcdir} "linux-symvers" "buildroot"
     COMMAND $(MAKE) -C ${linux_srcdir} O=${linux_wrkdir} CROSS_COMPILE=${cross_compile} ARCH=riscv
     COMMENT "Building linux"
   )
@@ -233,10 +234,10 @@ add_custom_target("driver" ALL DEPENDS ${driver_srcdir} ${linux_srcdir} "linux-s
 add_patch("sm/opensbi" "opensbi-firmware-secure-boot.patch" ${sm_srcdir}/opensbi sm_patches)
 add_custom_target("sm" ALL DEPENDS "linux" ${sm_wrkdir_exists} ${sm_patches} WORKING_DIRECTORY ${sm_wrkdir}
   COMMAND $(MAKE) -C ${sm_srcdir}/opensbi O=${sm_wrkdir} PLATFORM_DIR=${sm_srcdir}/plat/${platform}
-    CROSS_COMPILE=riscv${BITS}-unknown-elf- FW_PAYLOAD_PATH=${linux_image} FW_PAYLOAD=y PLATFORM_RISCV_XLEN=${BITS}
-    PLATFORM_RISCV_ISA=${ISA} PLATFORM_RISCV_ABI=${ABI}
+  CROSS_COMPILE=riscv${BITS}-unknown-elf- FW_PAYLOAD_PATH=${linux_image} FW_PAYLOAD=y PLATFORM_RISCV_XLEN=${BITS}
+  PLATFORM_RISCV_ISA=${ISA} PLATFORM_RISCV_ABI=${ABI}
   COMMENT "Building sm"
-)
+  )
 
 ###############################################################################
 ## COMPONENT: tests
@@ -249,16 +250,6 @@ add_custom_target("tests" DEPENDS examples ${overlay_root}
   COMMAND find ${example_wrkdir} -name "*.ke" | xargs -I{} rsync {} ${overlay_root}
   COMMENT "Copying example enclave packages"
   )
-
-if(NOT initramfs)
-  # TODO(keystone-enclave/keystone#251): Do this unconditionally
-  # regardless of whether initramfs is true.
-  add_custom_target("copy-fw_bin" DEPENDS sm ${overlay_root}
-    COMMAND cp ${fw_bin} ${overlay_root}
-    COMMENT "Copying SM binary for the attestation example to calculate hash"
-    )
-  add_dependencies("tests" "copy-fw_bin")
-endif()
 
 ###############################################################################
 ## COMPONENT: image
@@ -297,29 +288,11 @@ else()
 endif()
 
 # generate the qemu runscript, using the above options
-add_custom_command(OUTPUT ${scripts}/run-qemu.sh DEPENDS ${scripts}
-    WORKING_DIRECTORY ${scripts}
-    COMMAND echo "\
-      export HOST_PORT=\${HOST_PORT:=\"\$((3000 + RANDOM % 3000))\"}; \
-      echo \"**** Running QEMU SSH on port \${HOST_PORT} ****\"; \
-      export SMP=1; \
-      while [ \"\$1\" != \"\" ]; do if [ \"\$1\" = \"-debug\" ]; then echo \"**** GDB port \$((HOST_PORT + 1)) ****\"; DEBUG=\"-gdb tcp::\$((HOST_PORT + 1)) -S -d in_asm -D debug.log\"; fi; if [ \"\$1\" = \"-smp\" ]; then SMP=\"\$2\"; shift; fi; shift; done; \
-      ${qemu_system} \
-      \$DEBUG \
-      -m 2G \
-      -nographic \
-      -machine virt \
-      -bios ${bootrom_wrkdir}/bootrom.bin \
-      -kernel ${fw_elf} \
-      ${extra_qemu_options} \
-      -netdev user,id=net0,net=192.168.100.1/24,dhcpstart=192.168.100.128,hostfwd=tcp::\$\{HOST_PORT\}-:22 \
-      -device virtio-net-device,netdev=net0 \
-      -device virtio-rng-pci \
-      -smp $SMP" > run-qemu.sh
-      VERBATIM
-    COMMAND
-      chmod +x run-qemu.sh
-  )
+configure_file(
+  ${CMAKE_SOURCE_DIR}/scripts/run-qemu.sh.in
+  ${scripts}/run-qemu.sh
+  @ONLY)
+
 add_custom_command(OUTPUT ${scripts}/test-qemu.sh DEPENDS ${CMAKE_SOURCE_DIR}/scripts ${scripts}
   COMMAND cp ${CMAKE_SOURCE_DIR}/scripts/test-qemu.sh ${scripts})
 add_custom_command(OUTPUT ${scripts}/travis.sh DEPENDS ${CMAKE_SOURCE_DIR}/scripts ${scripts}
