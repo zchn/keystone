@@ -206,7 +206,8 @@ if(initramfs)
     COMMENT "Building linux (initramfs)"
   )
 else()
-  add_custom_command(OUTPUT ${linux_image} DEPENDS ${linux_srcdir} "linux-symvers"
+  # TODO(zchn): remove buildroot
+  add_custom_command(OUTPUT ${linux_image} DEPENDS ${linux_srcdir} "linux-symvers" "buildroot"
     COMMAND $(MAKE) -C ${linux_srcdir} O=${linux_wrkdir} CROSS_COMPILE=${cross_compile} ARCH=riscv
     COMMENT "Building linux"
   )
@@ -254,16 +255,6 @@ add_subdirectory(sdk/examples ${example_wrkdir})
 set_target_properties(examples PROPERTIES EXCLUDE_FROM_ALL YES)
 
 add_custom_target("tests" DEPENDS examples "sm")
-
-if(NOT initramfs)
-  # TODO(keystone-enclave/keystone#251): Do this unconditionally
-  # regardless of whether initramfs is true.
-  add_custom_target("copy-fw_bin" DEPENDS sm ${overlay_root}
-    COMMAND cp ${fw_bin} ${overlay_root}
-    COMMENT "Copying SM binary for the attestation example to calculate hash"
-    )
-  add_dependencies("tests" "copy-fw_bin")
-endif()
 
 ###############################################################################
 ## COMPONENT: image
