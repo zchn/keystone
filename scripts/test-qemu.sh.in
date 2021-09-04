@@ -1,0 +1,14 @@
+#!/bin/bash
+
+SSH_OPTIONS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+find @example_wrkdir@ -name "*.ke" | xargs -I{} scp -i @overlay_root@/.ssh/id_rsa ${SSH_OPTIONS} -P @qemu_ssh_port@ {} root@localhost:.
+
+run_in_qemu() {
+    echo "Running \"$1\" in QEMU ..."
+    ssh -i @overlay_root@/.ssh/id_rsa ${SSH_OPTIONS} -p @qemu_ssh_port@ root@localhost "$1"
+}
+run_in_qemu "insmod keystone-driver.ko"
+run_in_qemu "./tests.ke"
+run_in_qemu "./attestor.ke"
+run_in_qemu "poweroff"

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export HOST_PORT=${HOST_PORT:="$((3000 + RANDOM % 3000))"};
+export HOST_PORT=@qemu_ssh_port@;
 
 echo "**** Running QEMU SSH on port ${HOST_PORT} ****";
 
