@@ -128,8 +128,16 @@ add_custom_command(OUTPUT ${qemu_wrkdir}/config-host.mak
 ## COMPONENT: buildroot
 ###############################################################################
 
-add_custom_command(OUTPUT ${overlay_root} COMMAND mkdir -p ${overlay_root})
 add_custom_command(OUTPUT ${overlay_dir} COMMAND mkdir -p ${overlay_dir})
+add_custom_command(DEPENDS ${overlay_dir}
+  OUTPUT ${overlay_root}
+  ${overlay_root}/.ssh/id_rsa ${overlay_root}/.ssh/id_rsa.pub
+  ${overlay_root}/.ssh/authorized_keys
+  COMMAND mkdir -p ${overlay_root}
+  COMMAND mkdir -p ${overlay_root}/.ssh
+  COMMAND ssh-keygen -C 'root@keystone' -t rsa -f ${overlay_root}/.ssh/id_rsa -N ''
+  COMMAND cp ${overlay_root}/.ssh/id_rsa.pub ${overlay_root}/.ssh/authorized_keys)
+
 add_custom_command(OUTPUT ${buildroot_wrkdir} COMMAND mkdir -p ${buildroot_wrkdir})
 add_custom_target("buildroot" ALL DEPENDS ${buildroot_srcdir} ${buildroot_wrkdir}/.config ${overlay_root} ${buildroot_wrkdir}
   COMMAND $(MAKE) -s -C ${buildroot_srcdir} RISCV=$ENV{RISCV} PATH=$ENV{PATH} O=${buildroot_wrkdir}
@@ -246,16 +254,14 @@ set(example_wrkdir examples)
 add_subdirectory(sdk/examples ${example_wrkdir})
 set_target_properties(examples PROPERTIES EXCLUDE_FROM_ALL YES)
 
-add_custom_target("tests" DEPENDS examples ${overlay_root}
-  COMMAND find ${example_wrkdir} -name "*.ke" | xargs -I{} rsync {} ${overlay_root}
-  COMMENT "Copying example enclave packages"
-  )
+add_custom_target("tests" DEPENDS examples "sm")
+
 
 ###############################################################################
 ## COMPONENT: image
 ###############################################################################
 
-add_custom_target("image-deps" DEPENDS "tests" "driver" ${overlay_root}
+add_custom_target("image-deps" DEPENDS "driver" ${overlay_root}
   COMMAND find ${driver_wrkdir} -name "*.ko" -exec cp {} ${overlay_root} \\\\;
 )
 add_custom_target("image" DEPENDS "buildroot" "sm"
@@ -288,27 +294,36 @@ else()
 endif()
 
 # generate the qemu runscript, using the above options
+string(RANDOM LENGTH 4 ALPHABET 0123456789 qemu_ssh_port)
+math(EXPR qemu_ssh_port "3000 + ${qemu_ssh_port}%3000")
 configure_file(
   ${CMAKE_SOURCE_DIR}/scripts/run-qemu.sh.in
   ${scripts}/run-qemu.sh
   @ONLY)
 
-add_custom_command(OUTPUT ${scripts}/test-qemu.sh DEPENDS ${CMAKE_SOURCE_DIR}/scripts ${scripts}
-  COMMAND cp ${CMAKE_SOURCE_DIR}/scripts/test-qemu.sh ${scripts})
-add_custom_command(OUTPUT ${scripts}/travis.sh DEPENDS ${CMAKE_SOURCE_DIR}/scripts ${scripts}
+configure_file(
+  ${CMAKE_SOURCE_DIR}/scripts/test-qemu.sh.in
+  ${scripts}/test-qemu.sh
+  @ONLY)
+
+add_custom_command(OUTPUT ${scripts}/travis.sh
+  DEPENDS ${CMAKE_SOURCE_DIR}/scripts ${scripts}
   COMMAND cp ${CMAKE_SOURCE_DIR}/scripts/travis.sh ${scripts})
-add_custom_command(OUTPUT ${scripts}/gdb.sh DEPENDS ${CMAKE_SOURCE_DIR}/scripts ${scripts}
+add_custom_command(OUTPUT ${scripts}/gdb.sh
+  DEPENDS ${CMAKE_SOURCE_DIR}/scripts ${scripts}
   COMMAND cp ${CMAKE_SOURCE_DIR}/scripts/gdb.sh ${scripts})
 
 add_custom_target(
   "tools" ALL
-  DEPENDS ${scripts} ${scripts}/run-qemu.sh ${scripts}/test-qemu.sh ${scripts}/travis.sh ${scripts}/gdb.sh
+  DEPENDS ${scripts} ${scripts}/run-qemu.sh ${scripts}/test-qemu.sh
+  ${scripts}/travis.sh ${scripts}/gdb.sh
   COMMENT "Generating scripts and tools"
 )
 
 add_custom_target(
   "run-tests"
   DEPENDS "tools" "image"
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   COMMAND
     ./scripts/travis.sh ${CMAKE_SOURCE_DIR}/tests
   COMMENT "Running tests"
