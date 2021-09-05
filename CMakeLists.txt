@@ -321,7 +321,7 @@ add_custom_target(
 
 add_custom_target(
   "run-tests"
-  DEPENDS "tests" "tools" "image"
+  DEPENDS "tests" "tools" "image" "${fw_bin}"
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   COMMAND
     ./scripts/travis.sh ${CMAKE_SOURCE_DIR}/tests
