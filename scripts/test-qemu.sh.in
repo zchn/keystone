@@ -5,7 +5,7 @@ SSH_OPTIONS+=" -o StrictHostKeyChecking=no"
 SSH_OPTIONS+=" -o UserKnownHostsFile=/dev/null"
 
 upload_to_qemu() {
-    echo "Uploading \"$1\" to QEMU ..."
+    echo "Uploading \"$(basename $1)\" to QEMU ..."
     scp ${SSH_OPTIONS} -P @qemu_ssh_port@ $1 root@localhost:.
 }
 
