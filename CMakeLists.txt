@@ -206,8 +206,7 @@ if(initramfs)
     COMMENT "Building linux (initramfs)"
   )
 else()
-  # TODO(zchn): remove buildroot
-  add_custom_command(OUTPUT ${linux_image} DEPENDS ${linux_srcdir} "linux-symvers" "buildroot"
+  add_custom_command(OUTPUT ${linux_image} DEPENDS ${linux_srcdir} "linux-symvers"
     COMMAND $(MAKE) -C ${linux_srcdir} O=${linux_wrkdir} CROSS_COMPILE=${cross_compile} ARCH=riscv
     COMMENT "Building linux"
   )
@@ -322,7 +321,7 @@ add_custom_target(
 
 add_custom_target(
   "run-tests"
-  DEPENDS "tools" "image"
+  DEPENDS "tests" "tools" "image"
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   COMMAND
     ./scripts/travis.sh ${CMAKE_SOURCE_DIR}/tests
