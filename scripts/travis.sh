@@ -5,7 +5,7 @@ EXPECTED_LOG_DIR=$1
 # Launch QEMU test
 screen -L -dmS qemu ./scripts/run-qemu.sh
 sleep 10
-./scripts/test-qemu.sh | tee output.log
+./scripts/test-qemu.sh 2>&1 | grep -v "Warning: Permanently added" | tee output.log
 
 diff output.log $EXPECTED_LOG_DIR/test-qemu.expected.log
 if [ $? -eq 0 ]
