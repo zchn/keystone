@@ -81,4 +81,5 @@ workflows:
     jobs:
       - docker/publish:
           image: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
+          dockerfile: ./docker/Dockerfile.forsdk
           update-description: true
