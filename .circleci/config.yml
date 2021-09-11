@@ -2,7 +2,7 @@
 version: 2.1
 
 orbs:
-  docker: circleci/docker@x.y.z
+  docker: circleci/docker@1.7.0
 
 # prebuilt docker images with toolchain
 executors:
