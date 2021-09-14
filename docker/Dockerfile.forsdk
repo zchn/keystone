@@ -1,13 +1,14 @@
 FROM ubuntu:18.04
 WORKDIR /keystone
 
-RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get -y install \
+RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install --no-install-recommends --yes \
     tzdata autoconf automake autotools-dev bc p7zip-full \
     bison build-essential curl expat libexpat1-dev flex gawk gcc git \
     gperf libgmp-dev libmpc-dev libmpfr-dev libtool texinfo tmux \
     patchutils zlib1g-dev wget bzip2 patch vim-common lbzip2 python \
     pkg-config libglib2.0-dev libpixman-1-dev libssl-dev screen \
-    device-tree-compiler expect makeself unzip cpio rsync cmake
+    device-tree-compiler expect makeself unzip cpio rsync cmake \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY . /keystone
 RUN cd /keystone && \
@@ -26,6 +27,10 @@ COPY --from=0 /keystone/scripts /keystone/scripts
 COPY --from=0 /keystone/tests /keystone/tests
 COPY --from=0 /keystone/riscv64 /keystone/riscv64
 COPY --from=0 /keystone/sdk/build64 /keystone/sdk/build64
+
+RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install --no-install-recommends --yes \
+    screen openssh-client \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN cd /keystone && . ./source.sh && cd /keystone/build && ./scripts/travis.sh /keystone/tests
 
