@@ -1,4 +1,6 @@
 FROM ubuntu:18.04
+WORKDIR /keystone
+
 RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get -y install \
     tzdata autoconf automake autotools-dev bc \
     bison build-essential curl expat libexpat1-dev flex gawk gcc git \
@@ -7,4 +9,4 @@ RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get -y install \
     pkg-config libglib2.0-dev libpixman-1-dev libssl-dev screen \
     device-tree-compiler expect makeself unzip cpio rsync cmake
 
-WORKDIR /keystone
+COPY . /keystone
