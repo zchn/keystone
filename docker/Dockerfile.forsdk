@@ -1,7 +1,7 @@
 FROM ubuntu:18.04
 WORKDIR /keystone
 
-RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install --no-install-recommends --yes \
+RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install --yes \
     tzdata autoconf automake autotools-dev bc p7zip-full ca-certificates \
     bison build-essential curl expat libexpat1-dev flex gawk gcc git \
     gperf libgmp-dev libmpc-dev libmpfr-dev libtool texinfo tmux \
