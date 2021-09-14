@@ -10,3 +10,20 @@ RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get -y install \
     device-tree-compiler expect makeself unzip cpio rsync cmake
 
 COPY . /keystone
+RUN cd /keystone && \
+    ./fast-setup.sh && \
+    . ./source.sh && \
+    mkdir -p build && \
+    cd build && \
+    cmake .. && \
+    make -j$(nproc)
+ 
+FROM ubuntu:18.04
+WORKDIR /keystone
+COPY --from=0 /keystone/build /keystone/build
+COPY --from=0 /keystone/sdk /keystone/sdk
+COPY --from=0 /keystone/source.sh /keystone/source.sh
+
+RUN cd /keystone && . ./source.sh && cd /keystone/build && make run-tests
+
+ENTRYPOINT cd /keystone && . ./source.sh && cd /keystone/build && make run-tests
