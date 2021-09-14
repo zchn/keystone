@@ -2,7 +2,7 @@ FROM ubuntu:18.04
 WORKDIR /keystone
 
 RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get -y install \
-    tzdata autoconf automake autotools-dev bc \
+    tzdata autoconf automake autotools-dev bc p7zip-full \
     bison build-essential curl expat libexpat1-dev flex gawk gcc git \
     gperf libgmp-dev libmpc-dev libmpfr-dev libtool texinfo tmux \
     patchutils zlib1g-dev wget bzip2 patch vim-common lbzip2 python \
@@ -20,9 +20,9 @@ RUN cd /keystone && \
  
 FROM ubuntu:18.04
 WORKDIR /keystone
+COPY --from=0 /keystone/source.sh /keystone/source.sh
 COPY --from=0 /keystone/build /keystone/build
 COPY --from=0 /keystone/sdk /keystone/sdk
-COPY --from=0 /keystone/source.sh /keystone/source.sh
 
 RUN cd /keystone && . ./source.sh && cd /keystone/build && make run-tests
 
