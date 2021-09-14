@@ -71,16 +71,9 @@ jobs:
           no_output_timeout: 120m
 
 workflows:
-  build-and-test:
-    jobs:
-      - build-and-test-rv64-qemu
-      - build-rv64-fu540
-      - build-and-test-rv32-qemu
-
   build-docker-image-only:
     jobs:
       - docker/publish:
           image: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
           dockerfile: ./docker/Dockerfile.forsdk
-          attach-at: /keystone
           update-description: true
