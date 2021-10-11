@@ -1,5 +1,4 @@
-FROM ubuntu:18.04
-WORKDIR /keystone
+FROM zchn/riscv-gnu-toolchain:b5b8352efc1163c2df63ecc274438311704135e0 as builder
 
 RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install --yes \
     tzdata autoconf automake autotools-dev bc p7zip-full ca-certificates \
@@ -10,6 +9,7 @@ RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install --yes \
     device-tree-compiler expect makeself unzip cpio rsync cmake \
     && rm -rf /var/lib/apt/lists/*
 
+WORKDIR /keystone
 COPY . /keystone
 RUN cd /keystone && \
     ./fast-setup.sh && \
@@ -19,19 +19,19 @@ RUN cd /keystone && \
     cmake .. && \
     make -j$(nproc)
  
-FROM ubuntu:18.04
-WORKDIR /keystone
-COPY --from=0 /keystone/source.sh /keystone/source.sh
-COPY --from=0 /keystone/build /keystone/build
-COPY --from=0 /keystone/scripts /keystone/scripts
-COPY --from=0 /keystone/tests /keystone/tests
-COPY --from=0 /keystone/riscv64 /keystone/riscv64
-COPY --from=0 /keystone/sdk/build64 /keystone/sdk/build64
+FROM zchn/riscv-gnu-toolchain:b5b8352efc1163c2df63ecc274438311704135e0
+
+COPY --from=builder /keystone/source.sh /keystone/source.sh
+COPY --from=builder /keystone/build /keystone/build
+COPY --from=builder /keystone/scripts /keystone/scripts
+COPY --from=builder /keystone/tests /keystone/tests
+COPY --from=builder /keystone/sdk/build64 /keystone/sdk/build64
 
 RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install --no-install-recommends --yes \
     screen openssh-client \
     && rm -rf /var/lib/apt/lists/*
 
+WORKDIR /keystone
 # RUN cd /keystone && . ./source.sh && cd /keystone/build && ./scripts/travis.sh /keystone/tests
 
 ENTRYPOINT cd /keystone && . ./source.sh && cd /keystone/build && ./scripts/travis.sh /keystone/tests
