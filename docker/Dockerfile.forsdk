@@ -9,6 +9,7 @@ RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install --yes \
     device-tree-compiler expect makeself unzip cpio rsync cmake \
     && rm -rf /var/lib/apt/lists/*
 
+ENV FORCE_UNSAFE_CONFIGURE 1
 WORKDIR /keystone
 COPY . /keystone
 RUN cd /keystone && \
