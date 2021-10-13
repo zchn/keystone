@@ -1,4 +1,4 @@
-FROM zchn/riscv-gnu-toolchain:7fc9335d327431778560d0e19e566b3f6eac7ab0 as builder
+FROM zchn/riscv-gnu-toolchain:ae2bf72e3d2efcb60e0020fc21d46e331b3c1826 as builder
 
 RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install --yes \
     tzdata autoconf automake autotools-dev bc p7zip-full ca-certificates \
@@ -20,7 +20,7 @@ RUN cd /keystone && \
     cmake .. && \
     make -j$(nproc)
  
-FROM zchn/riscv-gnu-toolchain:7fc9335d327431778560d0e19e566b3f6eac7ab0
+FROM zchn/riscv-gnu-toolchain:ae2bf72e3d2efcb60e0020fc21d46e331b3c1826
 
 COPY --from=builder /keystone/source.sh /keystone/source.sh
 COPY --from=builder /keystone/build /keystone/build
