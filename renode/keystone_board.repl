@@ -1,0 +1,4 @@
+using "platforms/cpus/sifive-fu540.repl"
+
+bootrom: Memory.MappedMemory @ sysbus 0x00001000
+    size: 0x10000

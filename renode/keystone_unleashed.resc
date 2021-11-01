@@ -1,0 +1,15 @@
+$name?="keystone-unleashed"
+
+using sysbus
+mach create $name
+machine LoadPlatformDescription @renode/keystone_board.repl
+
+showAnalyzer uart0
+
+macro reset
+"""
+    sysbus LoadELF @b/bootrom.build/bootrom.elf
+    # sysbus LoadELF @b/sm.build/platform/generic/firmware/fw_payload.elf
+    sysbus LoadBinary @b/sm.build/platform/generic/firmware/fw_payload.bin 0x80000000
+"""
+runMacro $reset
