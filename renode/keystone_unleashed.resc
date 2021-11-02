@@ -6,15 +6,16 @@ machine LoadPlatformDescription @renode/keystone_board.repl
 
 showAnalyzer uart0
 
-$fdt?=@https://dl.antmicro.com/projects/renode/hifive-unleashed--devicetree.dtb-s_10532-70cd4fc9f3b4df929eba6e6f22d02e6ce4c17bd1
+$fdt?=@renode/download/hifive-unleashed--devicetree.dtb-s_10532-70cd4fc9f3b4df929eba6e6f22d02e6ce4c17bd1
 
 macro reset
 """
     sysbus LoadELF @b/bootrom.build/bootrom.elf
 
-    sysbus LoadFdt $fdt 0x81000000 "earlyconsole mem=256M@0x80000000"
+    # sysbus LoadFdt $fdt 0x81000000 "earlyconsole mem=256M@0x80000000"
+    sysbus LoadBinary $fdt 0x82000000
     # bootloader.S assumes DTB address is passed in via a1 (x11).
-    e51 SetRegisterUnsafe 11 0x81000000
+    e51 SetRegisterUnsafe 11 0x82000000
 
     # sysbus LoadELF @b/sm.build/platform/generic/firmware/fw_payload.elf
     sysbus LoadBinary @b/sm.build/platform/generic/firmware/fw_payload.bin 0x80000000

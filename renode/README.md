@@ -46,6 +46,8 @@ In this bash, run GDB.
 ``` bash
 apt update && apt install -y libpython2.7
 /work/riscv64/bin/riscv64-unknown-elf-gdb /work/b/bootrom.build/bootrom.elf
+# or this if you want to debug the security monitor or linux kernel:
+/work/riscv64/bin/riscv64-unknown-elf-gdb /work/b/sm.build/platform/generic/firmware/fw_payload.elf
 ```
 
 In GDB, connect to the server, set breakpoint, then run.
