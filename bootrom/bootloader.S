@@ -21,7 +21,8 @@ reset:
   csrr t0, mhartid
   bnez t0, loop
 
-  # sd a1, DTB(sp)
+  /* Assume DTB is passed in from the a1 register */
+  sd a1, DTB(sp)
 
   /* secure boot */
   call bootloader
@@ -42,9 +43,9 @@ boot:
   call clear_all_but_sp
 
   # boot payload
-	csrr a0, mhartid
-  la a1, _dtb
-	# ld a1, DTB(sp)
+  csrr a0, mhartid
+  # la a1, _dtb
+  ld a1, DTB(sp)
   li t0, DRAM_BASE
   jr t0
 
