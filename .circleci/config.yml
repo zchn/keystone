@@ -32,7 +32,7 @@ jobs:
               cd build64
               cmake /keystone
               make -j$(nproc)
-              make run-tests
+              renode_portable/renode -e 's @renode/keystone_unleashed.resc'
           no_output_timeout: 120m
   build-rv64-fu540:
     executor: setup-rv64gc
