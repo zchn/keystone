@@ -60,6 +60,7 @@ fi
 wget https://github.com/renode/renode/releases/download/v1.12.0/renode-1.12.0.linux-portable.tar.gz
 mkdir renode_portable
 tar xf  renode-*.linux-portable.tar.gz -C renode_portable --strip-components=1
+find renode_portable
 
 echo "Updating and cloning submodules, this may take a long time"
 git config submodule.riscv-gnu-toolchain.update none
