@@ -28,11 +28,12 @@ jobs:
           command: |
               ./fast-setup.sh
               source ./source.sh
-              mkdir build64
-              cd build64
+              mkdir b
+              cd b
               cmake /keystone
               make -j$(nproc)
-              renode_portable/renode -e 's @renode/keystone_unleashed.resc'
+              cd ..
+              ./renode/portable/renode -e 's @renode/keystone_unleashed.resc'
           no_output_timeout: 120m
   build-rv64-fu540:
     executor: setup-rv64gc
@@ -45,11 +46,12 @@ jobs:
           command: |
               ./fast-setup.sh
               source ./source.sh
-              mkdir build64-fu540
-              cd build64-fu540
+              mkdir b
+              cd b
               cmake /keystone -DLINUX_SIFIVE=y -DSM_PLATFORM=sifive/fu540
               make -j$(nproc)
-              renode_portable/renode -e 's @renode/keystone_unleashed.resc'
+              cd ..
+              ./renode/portable/renode -e 's @renode/keystone_unleashed.resc'
   build-and-test-rv32-qemu:
     executor: setup-rv32gc
     working_directory: /keystone
