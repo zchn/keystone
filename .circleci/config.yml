@@ -33,7 +33,7 @@ jobs:
               cmake /keystone
               make -j$(nproc)
               cd ..
-              ./renode/portable/renode -e 's @renode/keystone_unleashed.resc'
+              ./renode/portable/renode --disable-xwt --console -e 's @renode/keystone_unleashed.resc'
           no_output_timeout: 120m
   build-rv64-fu540:
     executor: setup-rv64gc
@@ -51,7 +51,7 @@ jobs:
               cmake /keystone -DLINUX_SIFIVE=y -DSM_PLATFORM=sifive/fu540
               make -j$(nproc)
               cd ..
-              ./renode/portable/renode -e 's @renode/keystone_unleashed.resc'
+              ./renode/portable/renode --disable-xwt --console -e 's @renode/keystone_unleashed.resc'
   build-and-test-rv32-qemu:
     executor: setup-rv32gc
     working_directory: /keystone
