@@ -56,10 +56,15 @@ else
   rm $TOOLCHAIN_7Z_FILE
 fi
 
-# Download renode portable.
-wget https://github.com/renode/renode/releases/download/v1.12.0/renode-1.12.0.linux-portable.tar.gz
-mkdir -p renode/portable
-tar xf  renode-*.linux-portable.tar.gz -C renode/portable --strip-components=1
+if [ ! -x renode/portable/renode ]; then
+    rm -fr renode/portable
+    # Download renode portable.
+    if [ ! -f renode-1.12.0.linux-portable.tar.gz ]; then
+        wget https://github.com/renode/renode/releases/download/v1.12.0/renode-1.12.0.linux-portable.tar.gz
+    fi
+    mkdir -p renode/portable
+    tar xf  renode-*.linux-portable.tar.gz -C renode/portable --strip-components=1
+fi
 find renode/portable
 
 echo "Updating and cloning submodules, this may take a long time"

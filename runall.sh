@@ -13,7 +13,7 @@ cd b/sdk.build && \
     cmake ../../sdk && \
     make && make install && \
     cd .. && \
-    cmake .. -DLINUX_SIFIVE=y && \
-    # cmake .. && \
+    # cmake .. -DLINUX_SIFIVE=y && \
+    cmake .. && \
     make && \
     make image

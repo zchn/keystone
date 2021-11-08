@@ -11,6 +11,8 @@ $fdt?=@renode/download/hifive-unleashed--devicetree.dtb-s_10532-70cd4fc9f3b4df92
 macro reset
 """
     sysbus LoadELF @b/bootrom.build/bootrom.elf
+    # sysbus LoadELF @renode/download/fsbl.elf
+    # sysbus LoadELF @renode/download/zsbl.elf
 
     sysbus LoadFdt $fdt 0x82000000 "earlyconsole mem=256M@0x80000000"
     # sysbus LoadBinary $fdt 0x82000000
