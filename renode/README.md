@@ -253,6 +253,43 @@ Backtrace stopped: frame did not save the PC
 Backtrace stopped: frame did not save the PC
 ```
 
+Sometimes it shows a different place for the e51 core:
+
+``` gdb
+(gdb) c
+Continuing.
+^C
+Thread 1 "keystone-unleashed.e51[0]" received signal SIGTRAP, Trace/breakpoint trap.
+[Switching to Thread 1]
+0xffffffe0000035c6 in ?? ()
+(gdb) info thread
+  Id   Target Id                              Frame
+  * 1    Thread 1 "keystone-unleashed.e51[0]"   0xffffffe0000035c6 in ?? ()
+    2    Thread 2 "keystone-unleashed.u54_1[1]" 0x0000000080005080 in atomic_read (atom=atom@entry=0x80038060)
+        at /work/sm/opensbi/lib/sbi/riscv_atomic.c:17
+    3    Thread 3 "keystone-unleashed.u54_2[2]" 0x0000000080005080 in atomic_read (atom=atom@entry=0x80036060)
+        at /work/sm/opensbi/lib/sbi/riscv_atomic.c:17
+    4    Thread 4 "keystone-unleashed.u54_3[3]" 0x0000000080005080 in atomic_read (atom=atom@entry=0x80034060)
+        at /work/sm/opensbi/lib/sbi/riscv_atomic.c:17
+    5    Thread 5 "keystone-unleashed.u54_4[4]" 0x0000000080005080 in atomic_read (atom=atom@entry=0x80032060)
+        at /work/sm/opensbi/lib/sbi/riscv_atomic.c:17
+```
+
+`0xffffffe0000035c6` is inside `setup_smp()`:
+
+``` assembly
+ffffffe00000353a <setup_smp>:
+ffffffe00000353a:       7139                    addi    sp,sp,-64
+ffffffe00000353c:       fc06                    sd      ra,56(sp)
+...
+ffffffe0000035c0:       b77d                    j       ffffffe00000356e <setup_smp+0x34>
+ffffffe0000035c2:       00099363                bnez    s3,ffffffe0000035c8 <setup_smp+0x8e>
+ffffffe0000035c6:       9002                    ebreak
+ffffffe0000035c8:       a5c18993                addi    s3,gp,-1444 # ffffffe00166bc1c <nr_cpu_ids>
+ffffffe0000035cc:       0009a603                lw      a2,0(s3)
+ffffffe0000035d0:       01267b63                bgeu    a2,s2,ffffffe0000035e6 <setup_smp+0xac>
+```
+
 Here is the full output:
 
 ``` asciidoc
