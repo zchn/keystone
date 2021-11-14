@@ -354,45 +354,29 @@ Here is a new round of debugging after recompiling Linux kernel, what used to be
 (gdb) c
 Continuing.
 ^C
-Thread 1 "keystone-unleashed.e51[0]" received sign
-al SIGTRAP, Trace/breakpoint trap.            
+Thread 1 "keystone-unleashed.e51[0]" received signal SIGTRAP, Trace/breakpoint trap.            
 0xffffffe00000358e in setup_smp ()            
 (gdb) info thread                             
-  Id   Target Id                              Fram
-e
-* 1    Thread 1 "keystone-unleashed.e51[0]"   0xff
-ffffe00000358e in setup_smp ()
-  2    Thread 2 "keystone-unleashed.u54_1[1]" 0x00
-00000080005080 in ?? ()
-  3    Thread 3 "keystone-unleashed.u54_2[2]" 0x00
-00000080005080 in ?? ()
-  4    Thread 4 "keystone-unleashed.u54_3[3]" 0x00
-00000080005080 in ?? ()
-  5    Thread 5 "keystone-unleashed.u54_4[4]" 0x00
-00000080005080 in ?? ()
+  Id   Target Id                              Frame
+* 1    Thread 1 "keystone-unleashed.e51[0]"   0xffffffe00000358e in setup_smp ()
+  2    Thread 2 "keystone-unleashed.u54_1[1]" 0x0000000080005080 in ?? ()
+  3    Thread 3 "keystone-unleashed.u54_2[2]" 0x0000000080005080 in ?? ()
+  4    Thread 4 "keystone-unleashed.u54_3[3]" 0x0000000080005080 in ?? ()
+  5    Thread 5 "keystone-unleashed.u54_4[4]" 0x0000000080005080 in ?? ()
 (gdb) symbol-file b/linux.build/vmlinux
 Reading symbols from b/linux.build/vmlinux...    
 (No debugging symbols found in b/linux.build/vmlinux)   
 (gdb) x/10i $pc-12
-   0xffffffe000003582 <setup_smp+72>:
-    jalr        -6(ra)
-   0xffffffe000003586 <setup_smp+76>:
-    mv  s1,a0
-   0xffffffe000003588 <setup_smp+78>:
-    j   0xffffffe000003536 <vdso_init+234>
-   0xffffffe00000358a <setup_smp+80>:
-    bnez        s3,0xffffffe000003590 <setup_smp+86>
+   0xffffffe000003582 <setup_smp+72>:    jalr        -6(ra)
+   0xffffffe000003586 <setup_smp+76>:    mv  s1,a0
+   0xffffffe000003588 <setup_smp+78>:    j   0xffffffe000003536 <vdso_init+234>
+   0xffffffe00000358a <setup_smp+80>:    bnez        s3,0xffffffe000003590 <setup_smp+86>
 => 0xffffffe00000358e <setup_smp+84>:   ebreak
-   0xffffffe000003590 <setup_smp+86>:
-    addi        s3,gp,-1476
-   0xffffffe000003594 <setup_smp+90>:
-    lw  a2,0(s3)
-   0xffffffe000003598 <setup_smp+94>:
-    bgeu        a2,s2,0xffffffe0000035ae <setup_smp+116>
-   0xffffffe00000359c <setup_smp+98>:
-    mv  a1,s2
-   0xffffffe00000359e <setup_smp+100>:
-    auipc       a0,0xb38
+   0xffffffe000003590 <setup_smp+86>:    addi        s3,gp,-1476
+   0xffffffe000003594 <setup_smp+90>:    lw  a2,0(s3)
+   0xffffffe000003598 <setup_smp+94>:    bgeu        a2,s2,0xffffffe0000035ae <setup_smp+116>
+   0xffffffe00000359c <setup_smp+98>:    mv  a1,s2
+   0xffffffe00000359e <setup_smp+100>:    auipc       a0,0xb38
 (gdb) l *(0xffffffe00000358e)
 No symbol table is loaded.  Use the "file" command.
 ```
@@ -403,22 +387,14 @@ Interestingly, when I load vmlinux from another GDB session without remote debug
 n-elf-gdb b/linux.build/vmlinux
 GNU gdb (GDB) 10.1
 Copyright (C) 2020 Free Software Foundation, Inc.
-License GPLv3+: GNU GPL version 3 or later <http:/
-/gnu.org/licenses/gpl.html>
-This is free software: you are free to change and 
-redistribute it.
-There is NO WARRANTY, to the extent permitted by l
-aw.   
-Type "show copying" and "show warranty" for detail
-s.
-This GDB was configured as "--host=x86_64-pc-linux
--gnu --target=riscv64-unknown-elf".
-Type "show configuration" for configuration detail
-s.
-For bug reporting instructions, please see:
-<https://www.gnu.org/software/gdb/bugs/>.
-Find the GDB manual and other documentation resour
-ces online at:
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.   
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "--host=x86_64-pc-linux-gnu --target=riscv64-unknown-elf".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:<https://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
     <http://www.gnu.org/software/gdb/documentation
 />.   
 
