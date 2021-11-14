@@ -44,10 +44,15 @@ boot:
 
   # boot payload
   csrr a0, mhartid
+  beqz a0, inf_loop
   # la a1, _dtb
   ld a1, DTB(sp)
   li t0, DRAM_BASE
   jr t0
+
+/* stop e51 from booting for hifive unleashed */
+inf_loop:
+  j inf_loop
 
 loop:
   LOAD t1, INIT(sp)
