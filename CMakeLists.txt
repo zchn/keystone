@@ -108,20 +108,20 @@ set(initramfs_sysroot ${CMAKE_BINARY_DIR}/initramfs-sysroot)
 ## COMPONENT: QEMU
 ###############################################################################
 
-set(qemu_system ${qemu_wrkdir}/riscv${BITS}-softmmu/qemu-system-riscv${BITS})
-add_patch("qemu" "qemu-secure-boot.patch" ${qemu_srcdir} qemu_patches)
+# set(qemu_system ${qemu_wrkdir}/riscv${BITS}-softmmu/qemu-system-riscv${BITS})
+# add_patch("qemu" "qemu-secure-boot.patch" ${qemu_srcdir} qemu_patches)
 
-add_custom_target("qemu" ALL DEPENDS ${qemu_system})
-add_custom_command(OUTPUT ${qemu_system}
-  COMMAND $(MAKE) -C ${qemu_srcdir}
-  DEPENDS ${qemu_wrkdir}/config-host.mak ${qemu_patches}
-  COMMENT "Building QEMU"
-)
-add_custom_command(OUTPUT ${qemu_wrkdir}/config-host.mak
-  WORKING_DIRECTORY ${qemu_srcdir}
-  COMMAND ./configure --target-list=riscv${BITS}-softmmu,riscv${BITS}-linux-user
-  COMMENT "Configuring QEMU"
-)
+# add_custom_target("qemu" ALL DEPENDS ${qemu_system})
+# add_custom_command(OUTPUT ${qemu_system}
+#   COMMAND $(MAKE) -C ${qemu_srcdir}
+#   DEPENDS ${qemu_wrkdir}/config-host.mak ${qemu_patches}
+#   COMMENT "Building QEMU"
+# )
+# add_custom_command(OUTPUT ${qemu_wrkdir}/config-host.mak
+#   WORKING_DIRECTORY ${qemu_srcdir}
+#   COMMAND ./configure --target-list=riscv${BITS}-softmmu,riscv${BITS}-linux-user
+#   COMMENT "Configuring QEMU"
+# )
 
 
 ###############################################################################
