@@ -171,7 +171,7 @@ Reading symbols from /work/b/sm.build/platform/generic/firmware/fw_payload.elf..
 
 The security monitor's entry point is the `_start` in
 `sm/opensbi/firmware/fw_base.S`. Still, only the hart-0 core runs the
-initialization, all other harts will be stuck at `wait_coldboot`.
+initialization, all other harts will be stuck at `wait_for_coldboot`.
 
 Hart 0 eventually gets to `sbi_hart_switch_mode` and then jumps to the
 beginning of the payload (i.e. the Linux kernel) while lowering the
