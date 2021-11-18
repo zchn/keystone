@@ -1,16 +1,75 @@
 # Running Keystone in Renode (WIP)
 
-**`cd` to Keystone's source code directory first.**
+Renode is a development framework which accelerates IoT and embedded
+systems development by letting you simulate physical hardware
+systems - including both the CPU, peripherals, sensors, environment
+and wired or wireless medium between nodes.
 
-## Commands to run
+In this document, we are going to use Renode to simulate an SoC board
+almost the same as HiFive Unleashed, and run Keystone on it.
 
-First, build keystone with the runall.sh script.
+## Getting the source
+
+Kevin has not yet submitted a PR to merge this work to Keystone's
+official repo, so for now you will have to clone Kevin's own
+development branch.
+
+``` bash
+git clone https://github.com/zchn/keystone.git
+cd keystone
+git checkout dev-renode
+```
+
+## Building the bootrom and the image
+
+Instead of HiFive Unleashed's own ZSBL (Zeroth Stage Bootloader) and
+FSBL (First Stage Bootloader), we will be using the generic bootrom
+under the keystone repo, in director `bootrom/`. We have made some
+modifications to this bootrom as it was originally designed for QEMU
+which is slightly different that the hardware we are dealing with.
+
+The first modification changes the way the bootrom finds the device
+tree file. The original bootrom starts the execution at `0x1000` and
+assumes that the device tree is loaded right after the bootrom
+code. This is because QEMU (see `qemu/hw/riscv/virt.c`) copies the
+device tree after bootrom. In our case, we want to pass location of
+the device tree via `a1` register at power-on. The `bootloader.S` in
+this branch has been changed to that logic.
+
+The second modification makes HiFive Unleashed's monitor CPU (e51) go
+to an infinite loop so it is not being used by the Security Monitor as
+the boot hart. This is because, although the Security Monitor can
+finish all the work needed with the e51 hart without any problems, the
+e51 hart will be marked as `disabled` at some point (not sure when),
+and as a result, the Linux kernel will fail to use it as the boot
+hart. The Security Monitor chooses which CPU to use as the boot hart
+using a lottery algorithm, and the Linux kernel uses whichever CPU the
+Security Monitor passes to it via the `a0` register at `mret`. Kevin
+decided that as a short term hack, it is easier to just prevent the
+e51 core to win the lottery than to change how the Security Monitor
+tells the Linux kernel which hart to boot from. The `bootloader.S` in
+this branch has been changed to that logic.
+
+
+Enough background, let's build keystone with the runall.sh script.
 
 ``` bash
 docker run -it -m 2000m -v $(pwd):/work --network host keystoneenclaveorg/keystone:init-rv64gc /work/runall.sh
 ```
 
-Secondly, start renode in headless mode.
+This will build the bootrom at `b/bootrom.build/bootrom.elf`, and the
+Security Monitor and the Linux kernel together at
+`b/sm.build/platform/generic/firmware/fw_payload.bin`.
+
+To help debugging, `bootrom.elf` contains debug symbols, the debug
+symbols for the Security Monitor is in
+`b/sm.build/platform/generic/firmware/fw_payload.elf`, and the debug
+symbols for the Linux kernel is at `b/linux.build/vmlinux`
+
+
+## Run Keystone in Renode
+
+Now let's start renode in headless mode.
 
 ``` bash
 renode --disable-xwt -P 7891
@@ -29,13 +88,16 @@ Then, in a new terminal window, attach to the renode monitor.
 telnet localhost 7891
 ```
 
-In the monitor window, include the keystone_unleashed.resc script.
+In the monitor window, include the keystone_unleashed.resc
+script. This script sets up a machine very similar to the HiFive
+Unleashed simulation provided by Renode, except that we adds some
+memory at 0x1000 to hold the bootrom.
 
 ``` bash
-i @renode/keystone_unleashed.resc
+(monitor) i @renode/keystone_unleashed.resc
 ```
 
-output:
+output from the renode terminal window:
 
 ``` asciidoc
 20:36:40.5821 [INFO] Including script: /data/home/kevin/code/keystone/1019/renode/keystone_unleashed.resc
@@ -48,8 +110,99 @@ output:
 20:36:42.4541 [INFO] u54_4: Setting PC value to 0x1000.
 ```
 
-If you don't want to debug the program with GDB, then just run `s` to
-start the emulation. Otherwise continue reading...
+If you don't want to debug the program with GDB, then just type
+`start` or `s` to start the emulation. Otherwise, read the "Raw Notes
+for GDB debugging" to learn how to debug it with GDB.
+
+``` bash
+(keystone-unleashed) s
+```
+
+Some output from the renode terminal:
+
+``` asciidoc
+20:55:21.5965 [INFO] keystone-unleashed: Machine started.
+20:55:53.3273 [INFO] uart0: [+0.22ks host +9.75s virt 9.75s virt from start]
+20:55:53.3294 [INFO] uart0: [+2.26ms host +0.1ms virt 9.75s virt from start]   OpenSBI v0.8
+...
+20:55:54.6701 [INFO] uart0: [+1.34s host +0.34s virt 10.1s virt from start]   Platform Name             : sifive,hifive-unleashed-a00
+20:55:54.6722 [INFO] uart0: [+2.18ms host +0s virt 10.1s virt from start]   Platform Features         : timer,mfdeleg
+20:55:54.6728 [INFO] uart0: [+0.68ms host +0.1ms virt 10.1s virt from start]   Platform HART Count       : 5
+20:55:54.6736 [INFO] uart0: [+0.73ms host +0s virt 10.1s virt from start]   Firmware Base             : 0x80000000
+20:55:54.6740 [INFO] uart0: [+0.42ms host +0.1ms virt 10.1s virt from start]   Firmware Size             : 236 KB
+20:55:54.6743 [INFO] uart0: [+0.34ms host +0s virt 10.1s virt from start]   Runtime SBI Version       : 0.2
+20:55:54.6744 [INFO] uart0: [+73?s host +0s virt 10.1s virt from start]
+20:55:54.7004 [INFO] uart0: [+26ms host +5.9ms virt 10.1s virt from start]   Domain0 Name              : root
+20:55:54.7009 [INFO] uart0: [+0.5ms host +0.1ms virt 10.1s virt from start]   Domain0 Boot HART         : 1
+20:55:54.7029 [INFO] uart0: [+2.05ms host +0s virt 10.1s virt from start]   Domain0 HARTs             : 0*,1*,2*,3*,4*
+20:55:54.8221 [INFO] uart0: [+0.1s host +24.4ms virt 10.13s virt from start]   Boot HART ID              : 1
+20:55:54.8227 [INFO] uart0: [+0.58ms host +0.1ms virt 10.13s virt from start]   Boot HART Domain          : root
+20:55:54.8238 [INFO] uart0: [+1.08ms host +0s virt 10.13s virt from start]   Boot HART ISA             : rv64imafdcs
+20:55:54.8297 [INFO] uart0: [+1.25ms host +0.1ms virt 10.13s virt from start]   Boot HART Features        : scounteren,mcounteren,time
+20:55:54.8297 [INFO] uart0: [+0.27ms host +0s virt 10.13s virt from start]   Boot HART PMP Count       : 16
+20:55:54.8304 [INFO] uart0: [+5.12ms host +0.1ms virt 10.13s virt from start]   Boot HART PMP Granularity : 4
+20:55:54.8309 [INFO] uart0: [+0.48ms host +0s virt 10.13s virt from start]   Boot HART PMP Address Bits: 54
+20:55:54.8312 [INFO] uart0: [+0.32ms host +0s virt 10.13s virt from start]   Boot HART MHPM Count      : 0
+20:55:54.8319 [INFO] uart0: [+0.71ms host +0.1ms virt 10.13s virt from start]   Boot HART MHPM Count      : 0
+20:55:54.8324 [INFO] uart0: [+0.48ms host +0s virt 10.13s virt from start]   Boot HART MIDELEG         : 0x0000000000000222
+20:55:54.8333 [INFO] uart0: [+0.83ms host +0.1ms virt 10.13s virt from start]   Boot HART MEDELEG         : 0x000000000000b109
+20:55:54.9383 [INFO] uart0: [+0.1s host +12ms virt 10.14s virt from start]   [    0.000000] OF: fdt: Ignoring memory ra
+nge 0x80000000 - 0x80200000
+20:55:54.9446 [INFO] uart0: [+6.43ms host +0.8ms virt 10.14s virt from start]   [    0.000000] Linux version 5.7.0-dirt
+y (root@VM-0-3-ubuntu) (gcc version 10.2.0 (GCC), GNU ld (GNU Binutils) 2.35) #5 SMP Sun Nov 14 13:26:02 UTC 2021
+20:55:54.9469 [INFO] uart0: [+2.3ms host +0.3ms virt 10.14s virt from start]   [    0.000000] earlycon: sbi0 at I/O por
+t 0x0 (options '')
+20:55:54.9492 [INFO] uart0: [+2.17ms host +0.2ms virt 10.14s virt from start]   [    0.000000] printk: bootconsole [sbi
+0] enabled
+20:55:54.9562 [INFO] uart0: [+7.07ms host +0.5ms virt 10.14s virt from start]   [    0.000000] initrd not found or empt
+y - disabling initrd
+...
+21:15:00.8674 [INFO] uart0: [+34.21s host +15.55s virt 27.61s virt from start]   Starting network: Waiting for interface eth0 to appear............... timeout!
+21:15:00.9324 [INFO] uart0: [+65.12ms host +3.9ms virt 27.61s virt from start]   run-parts: /etc/network/if-pre-up.d/wait_iface: exit status 1
+21:15:01.1811 [INFO] uart0: [+0.25s host +5.2ms virt 27.62s virt from start]   FAIL
+21:15:08.0709 [INFO] uart0: [+6.89s host +0.14s virt 27.75s virt from start]   Starting dropbear sshd: OK
+21:15:09.5494 [INFO] uart0: [+1.48s host +0.12s virt 27.88s virt from start]
+21:15:09.5624 [INFO] uart0: [+13.06ms host +0.3ms virt 27.88s virt from start]   Welcome to Buildroot
+```
+
+Note that there will be multiple `uart0: Trying to read data from
+empty receive fifo` warining messages, which can be ignored.
+
+Now switch back to the telnet terminal. Connect to the UART0 using `` and type
+in username (`root`) and password (`sifive`):
+
+``` asciidoc
+(keystone-unleashed) uart_connect sysbus.uart0
+Redirecting the input to sysbus.uart0, press <ESC> to quit...
+root
+Password:
+login[131]: root login on 'console'
+# ls
+keystone-driver.ko
+# uname -a
+Linux buildroot 5.7.0-dirty #5 SMP Sun Nov 14 13:26:02 UTC 2021 riscv64 GNU/Linux
+# insmod keystone-driver.ko
+[  286.427300] keystone_driver: loading out-of-tree module taints kernel.
+[  286.492900] keystone_enclave: keystone enclave v1.0.0
+```
+
+Press <ESC> to quit the UART0 connection, and type `Clear` to stop the emulation. Type `quit` to quit renode.
+
+``` bash
+Disconnected from sysbus.uart0
+(keystone-unleashed) Clear
+(monitor) quit
+Renode is quitting
+Connection closed by foreign host.
+```
+
+Kevin is still trying to figure out how to put the `.ke` packages to
+the simulator since network is still not working...
+
+## Raw Notes for GDB Debugging
+
+WARNING: this is just some raw notes that Kevin has not yet cleaned up
+before submitting a PR.
 
 Now start the GDB server.
 
@@ -354,9 +507,9 @@ Here is a new round of debugging after recompiling Linux kernel, what used to be
 (gdb) c
 Continuing.
 ^C
-Thread 1 "keystone-unleashed.e51[0]" received signal SIGTRAP, Trace/breakpoint trap.            
-0xffffffe00000358e in setup_smp ()            
-(gdb) info thread                             
+Thread 1 "keystone-unleashed.e51[0]" received signal SIGTRAP, Trace/breakpoint trap.
+0xffffffe00000358e in setup_smp ()
+(gdb) info thread
   Id   Target Id                              Frame
 * 1    Thread 1 "keystone-unleashed.e51[0]"   0xffffffe00000358e in setup_smp ()
   2    Thread 2 "keystone-unleashed.u54_1[1]" 0x0000000080005080 in ?? ()
@@ -364,8 +517,8 @@ Thread 1 "keystone-unleashed.e51[0]" received signal SIGTRAP, Trace/breakpoint t
   4    Thread 4 "keystone-unleashed.u54_3[3]" 0x0000000080005080 in ?? ()
   5    Thread 5 "keystone-unleashed.u54_4[4]" 0x0000000080005080 in ?? ()
 (gdb) symbol-file b/linux.build/vmlinux
-Reading symbols from b/linux.build/vmlinux...    
-(No debugging symbols found in b/linux.build/vmlinux)   
+Reading symbols from b/linux.build/vmlinux...
+(No debugging symbols found in b/linux.build/vmlinux)
 (gdb) x/10i $pc-12
    0xffffffe000003582 <setup_smp+72>:    jalr        -6(ra)
    0xffffffe000003586 <setup_smp+76>:    mv  s1,a0
@@ -389,14 +542,14 @@ GNU gdb (GDB) 10.1
 Copyright (C) 2020 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law.   
+There is NO WARRANTY, to the extent permitted by law.
 Type "show copying" and "show warranty" for details.
 This GDB was configured as "--host=x86_64-pc-linux-gnu --target=riscv64-unknown-elf".
 Type "show configuration" for configuration details.
 For bug reporting instructions, please see:<https://www.gnu.org/software/gdb/bugs/>.
 Find the GDB manual and other documentation resources online at:
     <http://www.gnu.org/software/gdb/documentation
-/>.   
+/>.
 
 For help, type "help".
 Type "apropos word" to search for commands related to "word"...
@@ -412,17 +565,17 @@ line to your configuration file "/root/.gdbinit".
 For more information about this security protection see the
 --Type <RET> for more, q to quit, c to continue without paging--
 "Auto-loading safe path" section in the GDB manual.  E.g., run from the shel
-l:      
+l:
         info "(gdb)Auto-loading safe path"
-(gdb) l *(0xffffffe00000358e)   
+(gdb) l *(0xffffffe00000358e)
 0xffffffe00000358e is in setup_smp (/work/linux/arch/riscv/kernel/smpboot.c:95).
 90
 91                      cpuid_to_hartid_map(cpuid) = hart;
 92                      cpuid++;
-93              }       
-94              
+93              }
+94
 95              BUG_ON(!found_boot_cpu);
-96              
+96
 97              if (cpuid > nr_cpu_ids)
 98                      pr_warn("Total number of cpus [%d] is greater than nr_cpus option value [%d]\n",
 99                              cpuid, nr_cpu_ids);

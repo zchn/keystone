@@ -6,19 +6,33 @@ machine LoadPlatformDescription @renode/keystone_board.repl
 
 showAnalyzer uart0
 
+$bootrom?=@b/bootrom.build/bootrom.elf
 $fdt?=@renode/download/hifive-unleashed--devicetree.dtb-s_10532-70cd4fc9f3b4df929eba6e6f22d02e6ce4c17bd1
+$sm?=@b/sm.build/platform/generic/firmware/fw_payload.bin
 
 macro reset
 """
-    sysbus LoadELF @b/bootrom.build/bootrom.elf
+    # Loads the bootrom at 0x1000. The load address is inferred from the ELF header.
+    # This will also help setting the pc register of all CPUs to 0x1000.
+    sysbus LoadELF $bootrom
 
-    # bootloader.S assumes DTB address is passed in via a1 (x11).
+    # Loads the device tree file at address 0x82000000.
+    # TODO: Use LoadFdt instead of LoadBinary since LoadFdt has some useful sanity checks.
+    # TODO: Use an DTB file compiled from the Linux kernel source 
+    # (arch/riscv/boot/dts/sifive/hifive-unleashed-a00.dts) instead of the binary one
+    # provided by Renode.
     sysbus LoadBinary $fdt 0x82000000
+    # Sets the a1 register (i.e. x11 register) to the location of the device tree file so
+    # the bootloader knows where to find it.
     e51 SetRegisterUnsafe 11 0x82000000
 
-    # sysbus LoadELF @b/sm.build/platform/generic/firmware/fw_payload.elf
-    sysbus LoadBinary @b/sm.build/platform/generic/firmware/fw_payload.bin 0x80000000
+    # Load the Security Monitor and the Linux kernel at the beginning of the DRAM.
+    sysbus LoadBinary $sm 0x80000000
+
+    # Load the debugging symbols for Linux.
     sysbus LoadSymbolsFrom @b/linux.build/vmlinux
+
+    # Uncomment the following to start a GDB server for debugging.
     # machine StartGdbServer 3333
 """
 runMacro $reset
