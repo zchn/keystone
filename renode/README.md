@@ -72,7 +72,7 @@ symbols for the Linux kernel is at `b/linux.build/vmlinux`
 Now let's start renode in headless mode.
 
 ``` bash
-renode --disable-xwt -P 7891
+./renode/portable/renode --disable-xwt -P 7891
 ```
 
 output:
