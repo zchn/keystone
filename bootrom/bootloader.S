@@ -21,8 +21,10 @@ reset:
   csrr t0, mhartid
   bnez t0, loop
 
+#ifdef KEYSTONE_DTB_FROM_A1
   /* Assume DTB is passed in from the a1 register */
   sd a1, DTB(sp)
+#endif
 
   /* secure boot */
   call bootloader
@@ -44,15 +46,24 @@ boot:
 
   # boot payload
   csrr a0, mhartid
+#ifdef KEYSTONE_DISABLE_HART0_BEFORE_PAYLOAD
   beqz a0, inf_loop
-  # la a1, _dtb
+#endif
+#ifdef KEYSTONE_DTB_FROM_A1
+  /* Assume DTB was passed in from the a1 register */
   ld a1, DTB(sp)
+#else
+  /* Assume DTB was appended right after the bootloader */
+  la a1, _end_of_bootloader
+#endif
   li t0, DRAM_BASE
   jr t0
 
-/* stop e51 from booting for hifive unleashed */
+#ifdef KEYSTONE_DISABLE_HART0_BEFORE_PAYLOAD
+/* Stop hart 0 from booting for hifive unleashed */
 inf_loop:
   j inf_loop
+#endif
 
 loop:
   LOAD t1, INIT(sp)

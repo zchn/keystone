@@ -9,6 +9,7 @@ CFLAGS = \
 	-static \
 	-fPIC \
 	-O2 -Wall
+OPTIONS = -DKEYSTONE_DTB_FROM_A1 -DKEYSTONE_DISABLE_HART0_BEFORE_PAYLOAD
 O ?=.
 
 # ^ consider taking out -g -Og and putting in -O2
@@ -31,8 +32,8 @@ bootrom_sources = \
 	./sha3/*.c
 
 %.elf: $(bootrom_sources) bootloader.lds
-	$(CC) $(CFLAGS) -I./ -L . -T bootloader.lds -o $@ $(bootrom_sources)
+
+$(CC) $(CFLAGS) $(OPTIONS) -I./ -L . -T bootloader.lds -o $@ $(bootrom_sources)
 
 %.bin: %.elf
 	$(OBJCOPY) -O binary --only-section=.text $< $@;
-

@@ -28,12 +28,11 @@ jobs:
           command: |
               ./fast-setup.sh
               source ./source.sh
-              mkdir b
-              cd b
+              mkdir build64
+              cd build64
               cmake /keystone
               make -j$(nproc)
-              cd ..
-              ./renode/portable/renode --disable-xwt --console -e 'help path; s @renode/keystone_unleashed.resc'
+              make run-tests
           no_output_timeout: 120m
   build-rv64-fu540:
     executor: setup-rv64gc
@@ -46,12 +45,11 @@ jobs:
           command: |
               ./fast-setup.sh
               source ./source.sh
-              mkdir b
-              cd b
+              mkdir build64-fu540
+              cd build64-fu540
               cmake /keystone -DLINUX_SIFIVE=y -DSM_PLATFORM=sifive/fu540
               make -j$(nproc)
-              cd ..
-              ./renode/portable/renode --disable-xwt --console -e 'help path; s @renode/keystone_unleashed.resc'
+              make run-renode # TODO(zchn): Change it to run-tests.
   build-and-test-rv32-qemu:
     executor: setup-rv32gc
     working_directory: /keystone

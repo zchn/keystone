@@ -13,7 +13,7 @@ SECTIONS
     *(*)
   }
   . = ALIGN(4);
-  PROVIDE( _dtb = . );
+  PROVIDE( _end_of_bootloader = . );
 }
 
 INCLUDE sanctum_params.lds
