@@ -326,3 +326,11 @@ add_custom_target(
     ./scripts/travis.sh ${CMAKE_SOURCE_DIR}/tests
   COMMENT "Running tests"
 )
+
+add_custom_target(
+  "run-renode"
+  DEPENDS "image"
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  COMMAND
+    renode --disable-xwt --console -e 'help path; s @renode/keystone_unleashed.resc'
+  COMMENT "Running renode")

@@ -15,5 +15,6 @@ cd b/sdk.build && \
     cd .. && \
     cmake .. -DLINUX_SIFIVE=y && \
     # cmake .. && \
-    make && \
-    make image
+    # make && \
+    make image && \
+    make run-renode

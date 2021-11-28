@@ -56,14 +56,18 @@ else
   rm $TOOLCHAIN_7Z_FILE
 fi
 
-if [ ! -x renode/portable/renode ]; then
-    rm -fr renode/portable
-    # Download renode portable.
+# TODO(zchn): Download renode on-demand in CMakeLists.txt.
+if ( $(command -v renode > /dev/null) )
+then
+    echo "Renode is already installed"
+else
+    echo "Downloading Prebuilt Renode Binary... "
     if [ ! -f renode-1.12.0.linux-portable.tar.gz ]; then
         wget https://github.com/renode/renode/releases/download/v1.12.0/renode-1.12.0.linux-portable.tar.gz
     fi
-    mkdir -p renode/portable
-    tar xf  renode-*.linux-portable.tar.gz -C renode/portable --strip-components=1
+    mkdir -p renode-1.12.0
+    tar xf  renode-1.12.0.linux-portable.tar.gz -C renode-1.12.0 --strip-components=1
+    export PATH=$(pwd)/renode-1.12.0:$PATH
 fi
 find renode/portable
 
@@ -103,8 +107,9 @@ fi
 # update source.sh
 GCC_PATH=$(which riscv$BITS-unknown-linux-gnu-gcc)
 RISCV_DIR=$(dirname $(dirname $GCC_PATH))
+RENODE_DIR=$(dirname $(which renode))
 echo "export RISCV=$RISCV_DIR" > ./source.sh
-echo "export PATH=$RISCV/bin:\$PATH" >> ./source.sh
+echo "export PATH=$RENODE_DIR:$RISCV/bin:\$PATH" >> ./source.sh
 echo "export KEYSTONE_SDK_DIR=$KEYSTONE_SDK_DIR" >> ./source.sh
 
 echo "RISC-V toolchain and Keystone SDK have been fully setup"
