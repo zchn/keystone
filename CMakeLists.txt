@@ -68,6 +68,8 @@ set(cross_compile riscv${BITS}-unknown-linux-gnu-)
 
 set(bootrom_srcdir ${CMAKE_SOURCE_DIR}/bootrom)
 set(bootrom_wrkdir ${CMAKE_BINARY_DIR}/bootrom.build)
+set(renode_srcdir ${CMAKE_SOURCE_DIR}/renode)
+set(renode_wrkdir ${CMAKE_BINARY_DIR}/renode.build)
 set(qemu_wrkdir ${CMAKE_SOURCE_DIR}/qemu)
 set(qemu_srcdir ${CMAKE_SOURCE_DIR}/qemu)
 set(sm_srcdir ${CMAKE_SOURCE_DIR}/sm)
@@ -327,10 +329,15 @@ add_custom_target(
   COMMENT "Running tests"
 )
 
+add_custom_command(OUTPUT ${renode_wrkdir} COMMAND mkdir -p ${renode_wrkdir})
+add_custom_target("renode-sync" DEPENDS ${renode_srcdir} ${renode_wrkdir}
+  COMMAND rsync -r ${renode_srcdir}/ ${renode_wrkdir})
+add_custom_target("dts-sync" DEPENDS "renode-sync" ${linux_srcdir}
+  COMMAND rsync -r ${linux_srcdir}/arch/riscv/boot/dts/sifive/hifive-unleashed-a00.dts ${renode_workdir})
 add_custom_target(
   "run-renode"
-  DEPENDS "image"
+  DEPENDS "image" "renode-sync"
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   COMMAND
-    renode --disable-xwt --console -e 'help path; s @renode/keystone_unleashed.resc'
+    test.sh --show-log renode.build/test.robot
   COMMENT "Running renode")

@@ -2,13 +2,14 @@ $name?="keystone-unleashed"
 
 using sysbus
 mach create $name
-machine LoadPlatformDescription @renode/keystone_board.repl
+machine LoadPlatformDescription @renode.build/keystone_board.repl
 
 showAnalyzer uart0
 
-$bootrom?=@b/bootrom.build/bootrom.elf
-$fdt?=@renode/download/hifive-unleashed--devicetree.dtb-s_10532-70cd4fc9f3b4df929eba6e6f22d02e6ce4c17bd1
-$sm?=@b/sm.build/platform/generic/firmware/fw_payload.bin
+$bootrom?=@bootrom.build/bootrom.elf
+# TODO(zchn): Compile from the dts file in the Linux kernel.
+$fdt?=@renode.build/download/hifive-unleashed--devicetree.dtb-s_10532-70cd4fc9f3b4df929eba6e6f22d02e6ce4c17bd1
+$sm?=@sm.build/platform/generic/firmware/fw_payload.bin
 
 macro reset
 """
@@ -30,7 +31,7 @@ macro reset
     sysbus LoadBinary $sm 0x80000000
 
     # Load the debugging symbols for Linux.
-    sysbus LoadSymbolsFrom @b/linux.build/vmlinux
+    sysbus LoadSymbolsFrom @linux.build/vmlinux
 
     # Uncomment the following to start a GDB server for debugging.
     # machine StartGdbServer 3333
