@@ -339,5 +339,7 @@ add_custom_target(
   DEPENDS "image" "renode-sync"
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   COMMAND
-    test.sh --show-log renode.build/test.robot
+    # renode --disable-xwt --hide-log --console -e 's @renode.build/keystone_unleashed.resc'
+    renode --disable-xwt --console -e 's @renode.build/keystone_unleashed.resc'
+    # test.sh --show-log renode.build/test.robot
   COMMENT "Running renode")

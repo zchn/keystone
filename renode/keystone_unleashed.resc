@@ -33,6 +33,11 @@ macro reset
     # Load the debugging symbols for Linux.
     sysbus LoadSymbolsFrom @linux.build/vmlinux
 
+    emulation CreateSwitch "switch1"
+    connector Connect sysbus.ethernet switch1
+    emulation CreateTap "tap0" "tap"
+    connector Connect host.tap switch1
+
     # Uncomment the following to start a GDB server for debugging.
     # machine StartGdbServer 3333
 """
