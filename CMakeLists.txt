@@ -330,13 +330,29 @@ add_custom_target(
 )
 
 add_custom_command(OUTPUT ${renode_wrkdir} COMMAND mkdir -p ${renode_wrkdir})
-add_custom_target("renode-sync" DEPENDS ${renode_srcdir} ${renode_wrkdir}
-  COMMAND rsync -r ${renode_srcdir}/ ${renode_wrkdir})
-add_custom_target("dts-sync" DEPENDS "renode-sync" ${linux_srcdir}
-  COMMAND rsync -r ${linux_srcdir}/arch/riscv/boot/dts/sifive/hifive-unleashed-a00.dts ${renode_workdir})
+
+configure_file(
+  ${renode_srcdir}/keystone_unleashed.resc.in
+  ${renode_wrkdir}/keystone_unleashed.resc
+  @ONLY)
+
+configure_file(
+  ${renode_srcdir}/keystone_board.repl.in
+  ${renode_wrkdir}/keystone_board.repl
+  @ONLY)
+
+add_custom_command(OUTPUT ${renode_wrkdir}/hifive-unleashed-renode.dtb
+  DEPENDS ${renode_srcdir}/hifive-unleashed-renode.dts ${renode_wrkdir}
+  COMMAND dtc -I dts -O dtb ${renode_srcdir}/hifive-unleashed-renode.dts -o ${renode_wrkdir}/hifive-unleashed-renode.dtb)
+
+add_custom_target("renode-deps"
+  DEPENDS "image" ${renode_wrkdir}/keystone_unleashed.resc
+  ${renode_wrkdir}/keystone_board.repl
+  ${renode_wrkdir}/hifive-unleashed-renode.dtb)
+
 add_custom_target(
   "run-renode"
-  DEPENDS "image" "renode-sync"
+  DEPENDS "renode-deps"
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   COMMAND
     # renode --disable-xwt --hide-log --console -e 's @renode.build/keystone_unleashed.resc'
