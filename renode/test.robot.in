@@ -1,0 +1,27 @@
+*** Settings ***
+Suite Setup     Setup
+Suite Teardown  Teardown
+Test Teardown   Test Teardown
+Resource        ${RENODEKEYWORDS}
+
+*** Variables ***
+${UART}                       sysbus.uart0
+${UART_TIMEOUT}               60
+
+*** Test Cases ***
+Should Print Help
+    ${x}=  Execute Command    help
+           Should Contain     ${x}    Available commands:
+
+Should Run Keystone
+    Execute Command           i @@renode_wrkdir@/keystone_unleashed.resc
+    Create Terminal Tester    ${UART}  timeout=${UART_TIMEOUT}
+    Start Emulation
+    Wait For Line On Uart     Welcome to Buildroot
+    Wait For Prompt On Uart   buildroot login:
+    Write Line To Uart        root
+    Wait For Prompt On Uart   Password:
+    Write Line To Uart        sifive
+    Wait For Prompt On Uart   #
+    Write Line To Uart        insmod keystone-driver.ko
+    Wait For Line On Uart     keystone_enclave: keystone enclave

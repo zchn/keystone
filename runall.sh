@@ -17,4 +17,4 @@ cd b/sdk.build && \
     # cmake .. && \
     # make && \
     make image && \
-    make run-renode
+    make run-tests-in-renode

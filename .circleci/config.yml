@@ -49,7 +49,7 @@ jobs:
               cd build64-fu540
               cmake /keystone -DLINUX_SIFIVE=y -DSM_PLATFORM=sifive/fu540
               make -j$(nproc)
-              make run-renode # TODO(zchn): Change it to run-tests.
+              make run-tests-in-renode
   build-and-test-rv32-qemu:
     executor: setup-rv32gc
     working_directory: /keystone

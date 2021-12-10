@@ -341,12 +341,18 @@ configure_file(
   ${renode_wrkdir}/keystone_board.repl
   @ONLY)
 
+configure_file(
+  ${renode_srcdir}/test.robot.in
+  ${renode_wrkdir}/test.robot
+  @ONLY)
+
 add_custom_command(OUTPUT ${renode_wrkdir}/hifive-unleashed-renode.dtb
   DEPENDS ${renode_srcdir}/hifive-unleashed-renode.dts ${renode_wrkdir}
   COMMAND dtc -I dts -O dtb ${renode_srcdir}/hifive-unleashed-renode.dts -o ${renode_wrkdir}/hifive-unleashed-renode.dtb)
 
 add_custom_target("renode-deps"
-  DEPENDS "image" ${renode_wrkdir}/keystone_unleashed.resc
+  DEPENDS "image" ${renode_wrkdir}/test.robot
+  ${renode_wrkdir}/keystone_unleashed.resc
   ${renode_wrkdir}/keystone_board.repl
   ${renode_wrkdir}/hifive-unleashed-renode.dtb)
 
@@ -354,8 +360,13 @@ add_custom_target(
   "run-renode"
   DEPENDS "renode-deps"
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-  COMMAND
-    # renode --disable-xwt --hide-log --console -e 's @renode.build/keystone_unleashed.resc'
-    renode --disable-xwt --console -e 's @renode.build/keystone_unleashed.resc'
-    # test.sh --show-log renode.build/test.robot
+  COMMAND renode --disable-xwt --console -e 'i @renode.build/keystone_unleashed.resc'
   COMMENT "Running renode")
+
+add_custom_target(
+  "run-tests-in-renode"
+  DEPENDS "renode-deps"
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  # TODO(zchn): consider using -b buildbot mode to create tap0 on host.
+  COMMAND test.sh --show-log -r ${renode_wrkdir} ${renode_wrkdir}/test.robot
+  COMMENT "Running tests in renode")

@@ -70,7 +70,6 @@ else
     export PATH=$(pwd)/renode-1.12.0:$PATH
     pip3 install -r ./renode-1.12.0/tests/requirements.txt
 fi
-find renode/portable
 
 echo "Updating and cloning submodules, this may take a long time"
 git config submodule.riscv-gnu-toolchain.update none
