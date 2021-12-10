@@ -7,6 +7,8 @@ Resource        ${RENODEKEYWORDS}
 *** Variables ***
 ${UART}                       sysbus.uart0
 ${UART_TIMEOUT}               60
+${USERNAME}                   root
+${PASSWORD}                   sifive
 
 *** Test Cases ***
 Should Print Help
@@ -15,13 +17,13 @@ Should Print Help
 
 Should Run Keystone
     Execute Command           i @@renode_wrkdir@/keystone_unleashed.resc
-    Create Terminal Tester    ${UART}  timeout=${UART_TIMEOUT}
+    Create Terminal Tester    ${UART}           timeout=${UART_TIMEOUT}
     Start Emulation
     Wait For Line On Uart     Welcome to Buildroot
     Wait For Prompt On Uart   buildroot login:
-    Write Line To Uart        root
+    Write Line To Uart        ${USERNAME}
     Wait For Prompt On Uart   Password:
-    Write Line To Uart        sifive
-    Wait For Prompt On Uart   #
+    Write Line To Uart        ${PASSWORD}       waitForEcho=false
+    Wait For Prompt On Uart   \#
     Write Line To Uart        insmod keystone-driver.ko
     Wait For Line On Uart     keystone_enclave: keystone enclave
