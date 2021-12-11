@@ -2,6 +2,7 @@ march ?= rv64imafdc
 mabi ?= lp64
 CC ?= riscv64-unknown-elf-gcc
 OBJCOPY ?= riscv64-unknown-elf-objcopy
+OPTIONS ?= ""
 
 CFLAGS = \
 	-march=$(march) -mcmodel=medany -mabi=$(mabi) \
@@ -9,7 +10,6 @@ CFLAGS = \
 	-static \
 	-fPIC \
 	-O2 -Wall
-OPTIONS = -DKEYSTONE_DTB_FROM_A1 -DKEYSTONE_DISABLE_HART0_BEFORE_PAYLOAD
 O ?=.
 
 # ^ consider taking out -g -Og and putting in -O2

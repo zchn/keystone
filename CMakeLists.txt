@@ -127,6 +127,33 @@ add_custom_command(OUTPUT ${qemu_wrkdir}/config-host.mak
 
 
 ###############################################################################
+## COMPONENT: Renode
+###############################################################################
+
+add_custom_command(OUTPUT ${renode_wrkdir}
+  COMMAND mkdir -p ${renode_wrkdir})
+
+configure_file(${renode_srcdir}/keystone_unleashed.resc.in
+  ${renode_wrkdir}/keystone_unleashed.resc @ONLY)
+
+configure_file(${renode_srcdir}/keystone_board.repl.in
+  ${renode_wrkdir}/keystone_board.repl @ONLY)
+
+configure_file(${renode_srcdir}/test.robot.in
+  ${renode_wrkdir}/test.robot @ONLY)
+
+add_custom_command(OUTPUT ${renode_wrkdir}/hifive-unleashed-renode.dtb
+  DEPENDS ${renode_srcdir}/hifive-unleashed-renode.dts ${renode_wrkdir}
+  COMMAND dtc -I dts -O dtb ${renode_srcdir}/hifive-unleashed-renode.dts
+          -o ${renode_wrkdir}/hifive-unleashed-renode.dtb)
+
+add_custom_target("renode-deps"
+  DEPENDS "image" ${renode_wrkdir}/test.robot
+  ${renode_wrkdir}/keystone_unleashed.resc
+  ${renode_wrkdir}/keystone_board.repl
+  ${renode_wrkdir}/hifive-unleashed-renode.dtb)
+
+###############################################################################
 ## COMPONENT: buildroot
 ###############################################################################
 
@@ -161,12 +188,20 @@ add_custom_command(DEPENDS ${buildroot_config} OUTPUT ${buildroot_wrkdir}/.confi
 ## component: bootrom
 ###############################################################################
 
+if(sifive)
+  set(bootrom_options "-DKEYSTONE_DTB_FROM_A1 -DDKEYSTONE_DISABLE_HART0_BEFORE_PAYLOAD")
+else()
+  set(bootrom_options "")
+endif()
+
 add_custom_command(OUTPUT ${bootrom_wrkdir} COMMAND mkdir -p ${bootrom_wrkdir})
 add_custom_target("bootrom-sync" DEPENDS ${bootrom_srcdir} ${bootrom_wrkdir}
   COMMAND rsync -r ${bootrom_srcdir}/ ${bootrom_wrkdir})
-add_custom_target("bootrom" ALL DEPENDS ${bootrom_wrkdir} ${bootrom_srcdir} "bootrom-sync"
-  COMMAND $(MAKE) -C ${bootrom_wrkdir} O=${bootrom_wrkdir} march=${ISA} mabi=${ABI} CC=riscv${BITS}-unknown-elf-gcc
-    OBJCOPY=riscv${BITS}-unknown-elf-objcopy
+add_custom_target("bootrom" ALL
+  DEPENDS ${bootrom_wrkdir} ${bootrom_srcdir} "bootrom-sync"
+  COMMAND $(MAKE) -C ${bootrom_wrkdir} O=${bootrom_wrkdir}
+    march=${ISA} mabi=${ABI} CC=riscv${BITS}-unknown-elf-gcc
+    OBJCOPY=riscv${BITS}-unknown-elf-objcopy OPTIONS=${bootrom_options}
   COMMENT "Building bootrom"
 )
 
@@ -228,7 +263,7 @@ add_custom_target("linux" ALL DEPENDS ${linux_image})
 
 add_custom_command(OUTPUT ${driver_wrkdir} COMMAND mkdir -p ${driver_wrkdir})
 add_custom_target("driver-sync" DEPENDS ${driver_srcdir} ${driver_wrkdir}
-	COMMAND rsync -r ${driver_srcdir}/ ${driver_wrkdir})
+  COMMAND rsync -r ${driver_srcdir}/ ${driver_wrkdir})
 add_custom_target("driver" ALL DEPENDS ${driver_srcdir} ${linux_srcdir} "linux-symvers" "driver-sync"
   COMMAND $(MAKE) -C ${linux_wrkdir} O=${linux_wrkdir} CROSS_COMPILE=${cross_compile} ARCH=riscv
     M=${driver_wrkdir} modules
@@ -329,38 +364,11 @@ add_custom_target(
   COMMENT "Running tests"
 )
 
-add_custom_command(OUTPUT ${renode_wrkdir} COMMAND mkdir -p ${renode_wrkdir})
-
-configure_file(
-  ${renode_srcdir}/keystone_unleashed.resc.in
-  ${renode_wrkdir}/keystone_unleashed.resc
-  @ONLY)
-
-configure_file(
-  ${renode_srcdir}/keystone_board.repl.in
-  ${renode_wrkdir}/keystone_board.repl
-  @ONLY)
-
-configure_file(
-  ${renode_srcdir}/test.robot.in
-  ${renode_wrkdir}/test.robot
-  @ONLY)
-
-add_custom_command(OUTPUT ${renode_wrkdir}/hifive-unleashed-renode.dtb
-  DEPENDS ${renode_srcdir}/hifive-unleashed-renode.dts ${renode_wrkdir}
-  COMMAND dtc -I dts -O dtb ${renode_srcdir}/hifive-unleashed-renode.dts -o ${renode_wrkdir}/hifive-unleashed-renode.dtb)
-
-add_custom_target("renode-deps"
-  DEPENDS "image" ${renode_wrkdir}/test.robot
-  ${renode_wrkdir}/keystone_unleashed.resc
-  ${renode_wrkdir}/keystone_board.repl
-  ${renode_wrkdir}/hifive-unleashed-renode.dtb)
-
 add_custom_target(
   "run-renode"
   DEPENDS "renode-deps"
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-  COMMAND renode --disable-xwt --console -e 'i @renode.build/keystone_unleashed.resc'
+  COMMAND renode --disable-xwt --console -e 'i @${renode_wrkdir}/keystone_unleashed.resc'
   COMMENT "Running renode")
 
 add_custom_target(
