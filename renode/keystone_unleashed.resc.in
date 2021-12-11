@@ -13,17 +13,20 @@ $vmlinux?=@@linux_wrkdir@/vmlinux
 
 macro reset
 """
-    # Loads the bootrom at 0x1000. The load address is inferred from the ELF header.
-    # This will also help setting the pc register of all CPUs to 0x1000.
+    # Loads the bootrom at 0x1000. The load address is inferred from
+    # the ELF header.  This will also help setting the pc register of
+    # all CPUs to 0x1000. 
     sysbus LoadELF $bootrom
 
     # Loads the device tree file at address 0x82000000.
     sysbus LoadFdt $fdt 0x82000000
-    # Sets the a1 register (i.e. x11 register) to the location of the device tree file so
-    # the bootloader knows where to find it.
+
+    # Sets the a1 register (i.e. x11 register) to the location of the
+    # device tree file so the bootloader knows where to find it.
     e51 SetRegisterUnsafe 11 0x82000000
 
-    # Load the Security Monitor and the Linux kernel at the beginning of the DRAM.
+    # Load the Security Monitor and the Linux kernel at the beginning
+    # of the DRAM.
     sysbus LoadBinary $sm 0x80000000
 
     # Load the debugging symbols for Linux.
