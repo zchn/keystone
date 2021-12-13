@@ -6,7 +6,7 @@ Resource        ${RENODEKEYWORDS}
 
 *** Variables ***
 ${UART}                       sysbus.uart0
-${UART_TIMEOUT_SEC}               60
+${UART_TIMEOUT_SEC}               48
 ${USERNAME}                   root
 ${PASSWORD}                   sifive
 
