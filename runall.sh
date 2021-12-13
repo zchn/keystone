@@ -10,6 +10,6 @@ cd b/sdk.build && \
     cmake ../../sdk && \
     make && make install && \
     cd .. && \
-    cmake /keystone -DLINUX_SIFIVE=y -DSM_PLATFORM=sifive/fu540 && \
+    cmake .. -DLINUX_SIFIVE=y -DSM_PLATFORM=sifive/fu540 && \
     make image && \
     make run-tests-in-renode
