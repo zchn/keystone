@@ -2,6 +2,8 @@
 
 set -e
 
+apt update && apt install apt-transport-https ca-certificates python3-pip -y && update-ca-certificates
+
 if [ -z "$BITS" ]; then
   BITS=64
 fi

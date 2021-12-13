@@ -2,7 +2,7 @@ march ?= rv64imafdc
 mabi ?= lp64
 CC ?= riscv64-unknown-elf-gcc
 OBJCOPY ?= riscv64-unknown-elf-objcopy
-OPTIONS ?= ""
+CMACROS ?= ""
 
 CFLAGS = \
 	-march=$(march) -mcmodel=medany -mabi=$(mabi) \
@@ -33,7 +33,7 @@ bootrom_sources = \
 
 %.elf: $(bootrom_sources) bootloader.lds
 
-$(CC) $(CFLAGS) $(OPTIONS) -I./ -L . -T bootloader.lds -o $@ $(bootrom_sources)
+	$(CC) $(CFLAGS) $(CMACROS) -I./ -L . -T bootloader.lds -o $@ $(bootrom_sources)
 
 %.bin: %.elf
 	$(OBJCOPY) -O binary --only-section=.text $< $@;

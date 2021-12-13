@@ -189,9 +189,9 @@ add_custom_command(DEPENDS ${buildroot_config} OUTPUT ${buildroot_wrkdir}/.confi
 ###############################################################################
 
 if(sifive)
-  set(bootrom_options "-DKEYSTONE_DTB_FROM_A1 -DDKEYSTONE_DISABLE_HART0_BEFORE_PAYLOAD")
+  set(bootrom_cmacros "-DKEYSTONE_DTB_FROM_A1 -DKEYSTONE_DISABLE_HART0_BEFORE_PAYLOAD")
 else()
-  set(bootrom_options "")
+  set(bootrom_cmacros "")
 endif()
 
 add_custom_command(OUTPUT ${bootrom_wrkdir} COMMAND mkdir -p ${bootrom_wrkdir})
@@ -201,7 +201,7 @@ add_custom_target("bootrom" ALL
   DEPENDS ${bootrom_wrkdir} ${bootrom_srcdir} "bootrom-sync"
   COMMAND $(MAKE) -C ${bootrom_wrkdir} O=${bootrom_wrkdir}
     march=${ISA} mabi=${ABI} CC=riscv${BITS}-unknown-elf-gcc
-    OBJCOPY=riscv${BITS}-unknown-elf-objcopy OPTIONS=${bootrom_options}
+    OBJCOPY=riscv${BITS}-unknown-elf-objcopy CMACROS="${bootrom_cmacros}"
   COMMENT "Building bootrom"
 )
 
