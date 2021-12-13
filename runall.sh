@@ -11,5 +11,4 @@ cd b/sdk.build && \
     make && make install && \
     cd .. && \
     cmake .. -DLINUX_SIFIVE=y -DSM_PLATFORM=sifive/fu540 && \
-    make image && \
     make run-tests-in-renode

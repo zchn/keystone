@@ -148,7 +148,7 @@ add_custom_command(OUTPUT ${renode_wrkdir}/hifive-unleashed-renode.dtb
           -o ${renode_wrkdir}/hifive-unleashed-renode.dtb)
 
 add_custom_target("renode-deps"
-  DEPENDS "image" ${renode_wrkdir}/test.robot
+  DEPENDS "bootrom" "image" ${renode_wrkdir}/test.robot
   ${renode_wrkdir}/keystone_unleashed.resc
   ${renode_wrkdir}/keystone_board.repl
   ${renode_wrkdir}/hifive-unleashed-renode.dtb)
