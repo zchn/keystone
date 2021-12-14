@@ -1,0 +1,4 @@
+using "platforms/cpus/sifive-fu540.repl"
+
+rom0: Memory.MappedMemory @ sysbus 0x00001000
+    size: 0xf000

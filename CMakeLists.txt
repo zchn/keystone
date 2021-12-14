@@ -139,19 +139,33 @@ configure_file(${renode_srcdir}/keystone_unleashed.resc.in
 configure_file(${renode_srcdir}/keystone_board.repl.in
   ${renode_wrkdir}/keystone_board.repl @ONLY)
 
-configure_file(${renode_srcdir}/test.robot.in
-  ${renode_wrkdir}/test.robot @ONLY)
-
 add_custom_command(OUTPUT ${renode_wrkdir}/hifive-unleashed-renode.dtb
   DEPENDS ${renode_srcdir}/hifive-unleashed-renode.dts ${renode_wrkdir}
   COMMAND dtc -I dts -O dtb ${renode_srcdir}/hifive-unleashed-renode.dts
-          -o ${renode_wrkdir}/hifive-unleashed-renode.dtb)
+  -o ${renode_wrkdir}/hifive-unleashed-renode.dtb)
+
+configure_file(${renode_srcdir}/keystone_prio.resc.in
+  ${renode_wrkdir}/keystone_prio.resc @ONLY)
+
+configure_file(${renode_srcdir}/keystone_prio.repl.in
+  ${renode_wrkdir}/keystone_prio.repl @ONLY)
+
+add_custom_command(OUTPUT ${renode_wrkdir}/prio-renode.dtb
+  DEPENDS ${renode_srcdir}/prio-renode.dts ${renode_wrkdir}
+  COMMAND dtc -I dts -O dtb ${renode_srcdir}/prio-renode.dts
+  -o ${renode_wrkdir}/prio-renode.dtb)
+
+configure_file(${renode_srcdir}/test.robot.in
+  ${renode_wrkdir}/test.robot @ONLY)
 
 add_custom_target("renode-deps"
   DEPENDS "bootrom" "image" ${renode_wrkdir}/test.robot
   ${renode_wrkdir}/keystone_unleashed.resc
   ${renode_wrkdir}/keystone_board.repl
-  ${renode_wrkdir}/hifive-unleashed-renode.dtb)
+  ${renode_wrkdir}/hifive-unleashed-renode.dtb
+  ${renode_wrkdir}/keystone_prio.resc
+  ${renode_wrkdir}/keystone_prio.repl
+  ${renode_wrkdir}/prio-renode.dtb)
 
 ###############################################################################
 ## COMPONENT: buildroot
@@ -366,6 +380,13 @@ add_custom_target(
 
 add_custom_target(
   "run-renode"
+  DEPENDS "renode-deps"
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  COMMAND renode --disable-xwt --console -e 'i @${renode_wrkdir}/keystone_unleashed.resc'
+  COMMENT "Running renode")
+
+add_custom_target(
+  "run-prio"
   DEPENDS "renode-deps"
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   COMMAND renode --disable-xwt --console -e 'i @${renode_wrkdir}/keystone_unleashed.resc'
