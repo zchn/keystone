@@ -70,6 +70,7 @@ else
     mkdir -p renode-1.12.0
     tar xf  renode-1.12.0.linux-portable.tar.gz -C renode-1.12.0 --strip-components=1
     export PATH=$(pwd)/renode-1.12.0:$PATH
+    apt install python3-pip
     pip3 install -r ./renode-1.12.0/tests/requirements.txt
 fi
 

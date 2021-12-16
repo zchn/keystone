@@ -155,17 +155,16 @@ add_custom_command(OUTPUT ${renode_wrkdir}/prio-renode.dtb
   COMMAND dtc -I dts -O dtb ${renode_srcdir}/prio-renode.dts
   -o ${renode_wrkdir}/prio-renode.dtb)
 
-configure_file(${renode_srcdir}/test.robot.in
-  ${renode_wrkdir}/test.robot @ONLY)
-
-add_custom_target("renode-deps"
-  DEPENDS "bootrom" "image" ${renode_wrkdir}/test.robot
-  ${renode_wrkdir}/keystone_unleashed.resc
+add_custom_target("renode-configs"
+  DEPENDS ${renode_wrkdir}/keystone_unleashed.resc
   ${renode_wrkdir}/keystone_board.repl
   ${renode_wrkdir}/hifive-unleashed-renode.dtb
   ${renode_wrkdir}/keystone_prio.resc
   ${renode_wrkdir}/keystone_prio.repl
   ${renode_wrkdir}/prio-renode.dtb)
+
+add_custom_target("renode-deps"
+  DEPENDS "bootrom" "image" "renode-configs")
 
 ###############################################################################
 ## COMPONENT: buildroot
@@ -392,9 +391,12 @@ add_custom_target(
   COMMAND renode --disable-xwt --console -e 'i @${renode_wrkdir}/keystone_unleashed.resc'
   COMMENT "Running renode")
 
+configure_file(${renode_srcdir}/test.robot.in
+  ${renode_wrkdir}/test.robot @ONLY)
+
 add_custom_target(
   "run-tests-in-renode"
-  DEPENDS "renode-deps"
+  DEPENDS "renode-deps" ${renode_wrkdir}/test.robot
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   # TODO(zchn): consider using -b buildbot mode to create tap0 on host.
   COMMAND test.sh --show-log -r ${renode_wrkdir} ${renode_wrkdir}/test.robot
