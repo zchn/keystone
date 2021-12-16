@@ -1,4 +1,51 @@
-using "platforms/cpus/sifive-fu540.repl"
+cpu0: CPU.RiscV64 @ sysbus
+    cpuType: "rv64imafdc"
+    hartId: 0
+    privilegeArchitecture: PrivilegeArchitecture.Priv1_10
+    timeProvider: clint
+
+cpu1: CPU.RiscV64 @ sysbus
+    cpuType: "rv64imafdc"
+    hartId: 1
+    privilegeArchitecture: PrivilegeArchitecture.Priv1_10
+    timeProvider: clint
+
+cpu2: CPU.RiscV64 @ sysbus
+    cpuType: "rv64imafdc"
+    hartId: 2
+    privilegeArchitecture: PrivilegeArchitecture.Priv1_10
+    timeProvider: clint
+
+cpu3: CPU.RiscV64 @ sysbus
+    cpuType: "rv64imafdc"
+    hartId: 3
+    privilegeArchitecture: PrivilegeArchitecture.Priv1_10
+    timeProvider: clint
 
 rom0: Memory.MappedMemory @ sysbus 0x00001000
     size: 0xf000
+
+ddr: Memory.MappedMemory @ sysbus 0x80000000
+    size: 0x10000000
+
+clint: IRQControllers.CoreLevelInterruptor  @ sysbus 0x800000
+    frequency: 1000000000
+    numberOfTargets: 4
+    [0, 1] -> cpu0@[3, 7]
+    [2, 3] -> cpu1@[3, 7]
+    [4, 5] -> cpu2@[3, 7]
+    [6, 7] -> cpu3@[3, 7]
+
+plic: IRQControllers.PlatformLevelInterruptController @ sysbus 0x500000
+    [0,1] -> cpu0@[11,9]
+    [2,3] -> cpu1@[11,9]
+    [4,5] -> cpu2@[11,9]
+    [6,7] -> cpu3@[11,9]
+    numberOfSources: 53
+    numberOfContexts: 8
+    prioritiesEnabled : false
+
+uart1: UART.PicoSoC_SimpleUART @ sysbus 0x1401800
+    IRQ -> plic@6
+
+

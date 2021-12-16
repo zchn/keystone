@@ -1,13 +1,13 @@
-$name?="keystone-unleashed"
+$name?="keystone-prio"
 
 using sysbus
 mach create $name
-machine LoadPlatformDescription @@renode_wrkdir@/keystone_board.repl
+machine LoadPlatformDescription @@renode_wrkdir@/keystone_prio.repl
 
 showAnalyzer uart0
 
 $bootrom?=@@bootrom_wrkdir@/bootrom.elf
-$fdt?=@@renode_wrkdir@/hifive-unleashed-renode.dtb
+$fdt?=@@renode_wrkdir@/prio-renode.dtb
 $sm?=@@fw_bin@
 $vmlinux?=@@linux_wrkdir@/vmlinux
 

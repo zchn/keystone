@@ -388,7 +388,7 @@ add_custom_target(
   "run-prio"
   DEPENDS "renode-deps"
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-  COMMAND renode --disable-xwt --console -e 'i @${renode_wrkdir}/keystone_unleashed.resc'
+  COMMAND renode --disable-xwt --console -e 'i @${renode_wrkdir}/keystone_prio.resc'
   COMMENT "Running renode")
 
 configure_file(${renode_srcdir}/test.robot.in

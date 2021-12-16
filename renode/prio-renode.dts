@@ -101,70 +101,10 @@
       reg-io-width = <4>;
       console;
     };
-    usb0: usb3@700000 {
-      compatible = "snps,dwc3";
-      reg = <0x0 0x700000 0x0 0x100000>;
-      interrupt-parent = <&plic0>;
-      interrupts = <25>;
-      dr_mode = "peripheral";
-      maximum-speed = "super-speed";
-      snps,incr-burst-type-adjustment = <4>;
-    };
-    dma: dma@500000 {
-      #interrupt-cells = <1>;
-      compatible = "adi,axi-dmac-1.00.a";
-      reg = <0x0 0x500000 0x0 0x600>;
-      interrupt-parent = <&plic0>;
-      interrupts = <31 32>;
-
-      #dma-cells = <1>;
-        adi,channels {
-       #size-cells = <0>;
-       #address-cells = <1>;
-       dma-channel@0 {
-               reg = <0>;
-               adi,source-bus-width = <32>;
-               adi,source-bus-type = <2>;
-               adi,destination-bus-width = <32>;
-               adi,destination-bus-type = <0>;
-       };
-       };
-    };
-    rivai_fake_codec: codec@20000000 {
-        #sound-dai-cells = <0>;
-      #interrupt-cells = <1>;
-      compatible = "rivai-fake-codec";
-      reg = <0x0 0x20000000 0x0 0x4>;
-      interrupt-parent = <&plic0>;
-
-      bus-width = <4>;
-    };
-    i2srx0: i2srx@1402800 {
-      #sound-dai-cells = <1>;
-      #interrupt-cells = <1>;
-      compatible = "snps,designware-i2s";
-      reg = <0x0 0x1402800 0x0 0x400>;
-      dmas = <&dma 0>;
-      dma-names = "rx";
-    };
     clint@800000 {
       compatible = "riscv,clint0";
       interrupts-extended = <&CPU0_intc 3 &CPU0_intc 7 &CPU1_intc 3 &CPU1_intc 7 &CPU2_intc 3 &CPU2_intc 7 &CPU3_intc 3 &CPU3_intc 7 >;
       reg = <0x0 0x800000 0x0 0xc0000>;
-    };
-  };
-  htif {
-    compatible = "ucb,htif0";
-  };
- sound {
-    compatible = "simple-audio-card";
-    simple-audio-card,name = "rivai-soundcard";
-    simple-audio-card,format = "i2s";
-    simple-audio-card,cpu {
-            sound-dai = <&i2srx0 0>;
-    };
-    dailink0_master: simple-audio-card,codec {
-    sound-dai = <&rivai_fake_codec>;
     };
   };
 };
